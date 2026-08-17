@@ -30,10 +30,12 @@ export function ImprimirReciboCaja({ movimiento, onClose }: Props) {
   const htmlContent = useMemo(() => {
     if (!movimiento || !params) return "";
     return generateHtmlCajaReceipt({
-      gimnasio: params.nombre_gym ?? "SAGIM",
+      gimnasio: params.nombre_gimnasio ?? "SAGIM",
       nit: params.nit,
       direccion: params.direccion,
       telefono: params.telefono,
+      textoResolucion: params.texto_resolucion,
+      mensajeRecibo: params.mensaje_recibo,
       fecha: movimiento.fecha,
       referencia: movimiento.referencia || "MANUAL",
       cedula: movimiento.cedula || "",

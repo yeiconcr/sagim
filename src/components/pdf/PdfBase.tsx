@@ -3,7 +3,7 @@
  * Usa @react-pdf/renderer.
  */
 import {
-  Document, Page, Text, View, StyleSheet, Font,
+  Document, Page, Text, View, StyleSheet, Font, Image,
 } from "@react-pdf/renderer";
 import { today } from "@/lib/utils";
 
@@ -232,16 +232,23 @@ interface HeaderProps {
   titulo: string;
   subtitulo?: string;
   fechaImpresion?: string;
+  logoPath?: string | null;
+  colorPrimario?: string | null;
 }
 
-export function ReporteHeader({ gimnasio, nit, direccion, telefono, titulo, subtitulo, fechaImpresion }: HeaderProps) {
+export function ReporteHeader({ gimnasio, nit, direccion, telefono, titulo, subtitulo, fechaImpresion, logoPath, colorPrimario }: HeaderProps) {
   return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <Text style={styles.gimnasioNombre}>{gimnasio}</Text>
-        {nit && <Text style={styles.gimnasioInfo}>NIT: {nit}</Text>}
-        {direccion && <Text style={styles.gimnasioInfo}>{direccion}</Text>}
-        {telefono && <Text style={styles.gimnasioInfo}>Tel: {telefono}</Text>}
+    <View style={[styles.header, colorPrimario ? { borderBottomColor: colorPrimario } : {}]}>
+      <View style={[styles.headerLeft, { flexDirection: 'row', gap: 10, alignItems: 'center' }]}>
+        {logoPath && (
+          <Image src={logoPath} style={{ width: 50, height: 50, objectFit: "contain" }} />
+        )}
+        <View>
+          <Text style={[styles.gimnasioNombre, colorPrimario ? { color: colorPrimario } : {}]}>{gimnasio}</Text>
+          {nit && <Text style={styles.gimnasioInfo}>NIT: {nit}</Text>}
+          {direccion && <Text style={styles.gimnasioInfo}>{direccion}</Text>}
+          {telefono && <Text style={styles.gimnasioInfo}>Tel: {telefono}</Text>}
+        </View>
       </View>
       <View style={styles.headerRight}>
         <Text style={styles.reporteTitulo}>{titulo}</Text>

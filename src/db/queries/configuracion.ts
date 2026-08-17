@@ -11,12 +11,41 @@ export async function getParametros(): Promise<Parametros | null> {
   return rows[0] ?? null;
 }
 
-export async function updateParametros(data: Partial<Omit<Parametros, "id">>): Promise<void> {
-  const fields = Object.keys(data);
-  if (fields.length === 0) return;
-  const sets = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
-  const values = fields.map((f) => (data as Record<string, unknown>)[f]);
-  await dbExecute(`UPDATE parametros SET ${sets} WHERE id = 1`, values);
+export async function updateParametros(
+  params: Partial<Omit<Parametros, "id" | "conse_ins" | "conse_rec" | "conse_fac">>
+): Promise<void> {
+  await dbExecute(
+    `UPDATE parametros SET 
+      nombre_gimnasio = COALESCE($1, nombre_gimnasio),
+      nit = $2,
+      direccion = $3,
+      telefono = $4,
+      dias_inactivar = COALESCE($5, dias_inactivar),
+      dias_alerta_vencimiento = COALESCE($6, dias_alerta_vencimiento),
+      logo_path = $7,
+      mensaje_recibo = $8,
+      texto_resolucion = $9,
+      formato_impresora = COALESCE($10, formato_impresora),
+      color_primario = COALESCE($11, color_primario),
+      iva_por_defecto = COALESCE($12, iva_por_defecto),
+      permitir_sin_stock = COALESCE($13, permitir_sin_stock)
+     WHERE id = 1`,
+    [
+      params.nombre_gimnasio,
+      params.nit,
+      params.direccion,
+      params.telefono,
+      params.dias_inactivar,
+      params.dias_alerta_vencimiento,
+      params.logo_path,
+      params.mensaje_recibo,
+      params.texto_resolucion,
+      params.formato_impresora,
+      params.color_primario,
+      params.iva_por_defecto,
+      params.permitir_sin_stock
+    ]
+  );
 }
 
 // =============================================

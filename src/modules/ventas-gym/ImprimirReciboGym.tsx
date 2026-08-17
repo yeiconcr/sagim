@@ -38,10 +38,12 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
   const htmlContent = useMemo(() => {
     if (!recibo || !params) return "";
     return generateHtmlGymReceipt({
-      gimnasio: params.nombre_gym ?? "SAGIM",
+      gimnasio: params.nombre_gimnasio ?? "SAGIM",
       nit: params.nit,
       direccion: params.direccion,
       telefono: params.telefono,
+      textoResolucion: params.texto_resolucion,
+      mensajeRecibo: params.mensaje_recibo,
       nroDocu: recibo.nro_docu,
       fecha: recibo.fecha,
       hora: recibo.hora,

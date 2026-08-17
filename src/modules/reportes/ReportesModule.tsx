@@ -196,6 +196,8 @@ export function ReportesModule() {
         direccion: params?.direccion,
         telefono: params?.telefono,
         generadoPor: usuario?.nombre,
+        logoPath: params?.logo_path,
+        colorPrimario: params?.color_primario,
       };
 
       let doc: React.ReactElement | null = null;

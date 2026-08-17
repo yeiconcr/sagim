@@ -54,7 +54,13 @@ async function createTables(db: Database): Promise<void> {
       conse_rec INTEGER NOT NULL DEFAULT 1,
       conse_fac INTEGER NOT NULL DEFAULT 1,
       dias_inactivar INTEGER NOT NULL DEFAULT 90,
-      dias_alerta_vencimiento INTEGER NOT NULL DEFAULT 5
+      dias_alerta_vencimiento INTEGER NOT NULL DEFAULT 5,
+      mensaje_recibo TEXT,
+      texto_resolucion TEXT,
+      formato_impresora TEXT NOT NULL DEFAULT 'POS-80',
+      color_primario TEXT NOT NULL DEFAULT '#1e40af',
+      iva_por_defecto REAL NOT NULL DEFAULT 0,
+      permitir_sin_stock INTEGER NOT NULL DEFAULT 1
     )`,
 
     `CREATE TABLE IF NOT EXISTS especialidades (
@@ -390,6 +396,23 @@ async function createTables(db: Database): Promise<void> {
   for (const sql of tables) {
     await db.execute(sql);
   }
+
+  // --- MIGRACIONES MANUALES (Para bases de datos existentes) ---
+  const newColumns = [
+    "ALTER TABLE parametros ADD COLUMN mensaje_recibo TEXT",
+    "ALTER TABLE parametros ADD COLUMN texto_resolucion TEXT",
+    "ALTER TABLE parametros ADD COLUMN formato_impresora TEXT NOT NULL DEFAULT 'POS-80'",
+    "ALTER TABLE parametros ADD COLUMN color_primario TEXT NOT NULL DEFAULT '#1e40af'",
+    "ALTER TABLE parametros ADD COLUMN iva_por_defecto REAL NOT NULL DEFAULT 0",
+    "ALTER TABLE parametros ADD COLUMN permitir_sin_stock INTEGER NOT NULL DEFAULT 1",
+  ];
+  for (const alter of newColumns) {
+    try {
+      await db.execute(alter);
+    } catch (_e) {
+      // Ignorar el error si la columna ya existe
+    }
+  }
 }
 
 async function seedInitialData(db: Database): Promise<void> {
@@ -398,8 +421,9 @@ async function seedInitialData(db: Database): Promise<void> {
   if (params[0].c === 0) {
     await db.execute(
       `INSERT INTO parametros (nombre_gimnasio, nit, direccion, telefono,
-        conse_ins, conse_rec, conse_fac, dias_inactivar, dias_alerta_vencimiento)
-       VALUES ('MI GIMNASIO', '', '', '', 1, 1, 1, 90, 5)`
+        conse_ins, conse_rec, conse_fac, dias_inactivar, dias_alerta_vencimiento,
+        formato_impresora, color_primario, iva_por_defecto, permitir_sin_stock)
+       VALUES ('MI GIMNASIO', '', '', '', 1, 1, 1, 90, 5, 'POS-80', '#1e40af', 0, 1)`
     );
   }
 

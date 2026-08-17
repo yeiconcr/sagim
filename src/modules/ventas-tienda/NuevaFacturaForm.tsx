@@ -49,6 +49,7 @@ export function NuevaFacturaForm({ cedulaInicial, onGuardar, onCancelar }: Props
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<string>("");
   const [abonoInicial, setAbonoInicial] = useState(0);
   const [guardando, setGuardando] = useState(false);
+  const [permitirSinStock, setPermitirSinStock] = useState(true);
   const { success, error } = useToast();
   const { usuario } = useAuthStore();
 
@@ -56,12 +57,16 @@ export function NuevaFacturaForm({ cedulaInicial, onGuardar, onCancelar }: Props
     Promise.all([
       getInventario({ pageSize: 500, estado: "A" }),
       getFormasPago(true),
-    ]).then(([inv, fps]) => {
+      import("@/db/queries/configuracion").then(m => m.getParametros())
+    ]).then(([inv, fps, p]) => {
       setArticulos(inv.data);
       setFormasPago(fps);
       if (fps.length > 0) {
         setIdFormaPago(String(fps[0].id));
         setPlazo(fps[0].plazo_dias);
+      }
+      if (p) {
+        setPermitirSinStock(p.permitir_sin_stock === 1);
       }
     });
   }, []);
@@ -75,7 +80,7 @@ export function NuevaFacturaForm({ cedulaInicial, onGuardar, onCancelar }: Props
   const agregarItem = () => {
     const art = articulos.find((a) => a.codigo === articuloSeleccionado);
     if (!art) return;
-    if (art.stock <= 0) { error("Sin stock", `${art.nombre} no tiene stock disponible.`); return; }
+    if (art.stock <= 0 && !permitirSinStock) { error("Sin stock", `${art.nombre} no tiene stock disponible.`); return; }
 
     const punitario = art.precio_compra * (1 + art.ganancia / 100);
     const total = punitario;
@@ -133,10 +138,12 @@ export function NuevaFacturaForm({ cedulaInicial, onGuardar, onCancelar }: Props
     if (!idFormaPago) { error("Forma de pago", "Seleccione una forma de pago."); return; }
 
     // Validar stock
-    for (const item of items) {
-      if (item.cantidad > item.stockDisponible) {
-        error("Stock insuficiente", `${item.detalle}: solo hay ${item.stockDisponible} unidades disponibles.`);
-        return;
+    if (!permitirSinStock) {
+      for (const item of items) {
+        if (item.cantidad > item.stockDisponible) {
+          error("Stock insuficiente", `${item.detalle}: solo hay ${item.stockDisponible} unidades disponibles.`);
+          return;
+        }
       }
     }
 

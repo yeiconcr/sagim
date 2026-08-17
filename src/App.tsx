@@ -15,6 +15,12 @@ function App() {
     async function initialize() {
       try {
         await initDatabase();
+        // Load custom color
+        const { getParametros } = await import("@/db/queries/configuracion");
+        const p = await getParametros();
+        if (p?.color_primario) {
+          document.documentElement.style.setProperty("--primary", p.color_primario);
+        }
       } catch (err) {
         console.error("Error inicializando base de datos:", err);
         setDbError(String(err));

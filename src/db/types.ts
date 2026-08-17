@@ -39,6 +39,12 @@ export interface Parametros {
   conse_fac: number;
   dias_inactivar: number;
   dias_alerta_vencimiento: number;
+  mensaje_recibo: string | null;
+  texto_resolucion: string | null;
+  formato_impresora: string;
+  color_primario: string;
+  iva_por_defecto: number;
+  permitir_sin_stock: number; // 0 o 1
 }
 
 // =============================================

@@ -15,6 +15,10 @@ interface PosReceiptCajaProps {
   valor: number;
   
   generadoPor?: string;
+  valorLetras?: string | null;
+  anulado?: boolean;
+  textoResolucion?: string | null;
+  mensajeRecibo?: string | null;
 }
 
 export function generateHtmlCajaReceipt(p: PosReceiptCajaProps): string {
@@ -27,6 +31,7 @@ export function generateHtmlCajaReceipt(p: PosReceiptCajaProps): string {
         ${p.nit ? `<div style="font-size: 10px;">NIT: ${p.nit}</div>` : ''}
         ${p.direccion ? `<div style="font-size: 10px;">${p.direccion}</div>` : ''}
         ${p.telefono ? `<div style="font-size: 10px;">Tel: ${p.telefono}</div>` : ''}
+        ${p.textoResolucion ? `<div style="font-size: 9px; margin-top: 4px; font-style: italic;">${p.textoResolucion}</div>` : ''}
       </div>
       
       <div style="border-bottom: 1px dashed #000; margin: 6px 0;"></div>
@@ -68,7 +73,8 @@ export function generateHtmlCajaReceipt(p: PosReceiptCajaProps): string {
       </div>
       
       <div style="text-align: center; font-size: 9px; margin-top: 16px;">
-        <div style="margin-bottom: 2px;">Atendido por: ${p.generadoPor || 'Sistema'}</div>
+        <div style="margin-bottom: 2px;">Recibido por: ${p.generadoPor || 'Sistema'}</div>
+        <div style="margin-bottom: 2px;">${p.mensajeRecibo || '¡Gracias por su abono!'}</div>
         <div>SAGIM Software</div>
       </div>
     </div>
