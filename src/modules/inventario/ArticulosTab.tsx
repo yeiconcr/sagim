@@ -60,10 +60,14 @@ export function ArticulosTab() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { estado: "A", stock: 0, ganancia: 0, impuesto: 0, precio_compra: 0, unidad_medida: "UND" },
   });
+
+  const watchPrecioCompra = watch("precio_compra") || 0;
+  const watchGanancia = watch("ganancia") || 0;
+  const precioVentaCalculado = Number(watchPrecioCompra) * (1 + Number(watchGanancia) / 100);
 
   const abrirNuevo = () => {
     reset({ estado: "A", stock: 0, ganancia: 0, impuesto: 0, precio_compra: 0, unidad_medida: "UND" });
@@ -185,7 +189,8 @@ export function ArticulosTab() {
         </div>
       ),
     },
-    { accessorKey: "stock", header: "Stock", size: 80, cell: ({ row }) => <span className={cn("text-base font-bold tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock} <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded ml-1 font-medium">{row.original.unidad_medida}</span></span> },
+    { accessorKey: "stock", header: "Stock", size: 80, cell: ({ row }) => <span className={cn("text-base font-bold tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock}</span> },
+    { accessorKey: "unidad_medida", header: "Und.", size: 70, cell: ({ getValue }) => <Badge variant="outline" className="text-[10px] uppercase font-semibold text-slate-500 bg-slate-50">{getValue<string>()}</Badge> },
     { accessorKey: "precio_compra", header: "P. Compra", size: 110, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
     {
       id: "precio_venta", header: "P. Venta", size: 110,
@@ -252,8 +257,23 @@ export function ArticulosTab() {
                 <FormField label="Stock inicial" htmlFor="art-sto">
                   <Input id="art-sto" type="number" step="0.01" min="0" {...register("stock")} />
                 </FormField>
-                <FormField label="Unidad de medida" htmlFor="art-uni">
-                  <Input id="art-uni" {...register("unidad_medida")} placeholder="UND, KG, LT..." />
+                <FormField label="Unidad de medida">
+                  <Controller name="unidad_medida" control={control} render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger><SelectValue placeholder="Seleccione..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="UND">Unidad (UND)</SelectItem>
+                        <SelectItem value="KG">Kilogramo (KG)</SelectItem>
+                        <SelectItem value="LT">Litro (LT)</SelectItem>
+                        <SelectItem value="M">Metro (M)</SelectItem>
+                        <SelectItem value="PAQ">Paquete (PAQ)</SelectItem>
+                        <SelectItem value="CJA">Caja (CJA)</SelectItem>
+                        <SelectItem value="SRV">Servicio (SRV)</SelectItem>
+                        <SelectItem value="MENS">Mensualidad (MENS)</SelectItem>
+                        <SelectItem value="OTRA">Otra</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )} />
                 </FormField>
                 <FormField label="Precio compra $" required error={errors.precio_compra?.message} htmlFor="art-pco">
                   <Input id="art-pco" type="number" step="0.01" min="0" {...register("precio_compra")} className={cn(errors.precio_compra && "border-destructive")} />
@@ -261,6 +281,12 @@ export function ArticulosTab() {
                 <FormField label="% Ganancia" htmlFor="art-gan">
                   <Input id="art-gan" type="number" step="0.01" min="0" {...register("ganancia")} />
                 </FormField>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-slate-700">P. Venta (Calculado)</label>
+                  <div className="flex h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-sm items-center font-bold text-green-700 shadow-sm">
+                    {formatCurrency(precioVentaCalculado)}
+                  </div>
+                </div>
                 <FormField label="% IVA" htmlFor="art-iva">
                   <Input id="art-iva" type="number" step="0.01" min="0" max="100" {...register("impuesto")} />
                 </FormField>

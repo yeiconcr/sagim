@@ -109,4 +109,29 @@
   background: hsl(var(--muted-foreground));
 }
 
-
+/* ── Estilos de impresión ── */
+@media print {
+  /* Cuando se activa impresión, ocultar TODO excepto el área del PDF */
+  body.sagim-printing * {
+    visibility: hidden !important;
+  }
+  body.sagim-printing .sagim-print-area,
+  body.sagim-printing .sagim-print-area * {
+    visibility: visible !important;
+  }
+  body.sagim-printing .sagim-print-area {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+  }
+  body.sagim-printing .sagim-print-area iframe {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  body.sagim-printing .sagim-no-print {
+    display: none !important;
+  }
+}

@@ -3,7 +3,7 @@
  * Flujo: seleccionar reporte → configurar filtros → preview PDF → imprimir/guardar.
  * Task 17.
  */
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, useRef, lazy, Suspense } from "react";
 import { PDFViewer, usePDF } from "@react-pdf/renderer";
 import {
   FileText, Users, Package, BarChart2, Wallet, TrendingUp,
@@ -611,7 +611,6 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [instance] = usePDF({ document: doc as any });
   const [descargando, setDescargando] = useState(false);
-  const [imprimiendo, setImprimiendo] = useState(false);
 
   const handleDescargar = async () => {
     if (!instance.blob || !instance.url) return;
@@ -643,42 +642,20 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
   };
 
   const handleImprimir = async () => {
-    if (!instance.blob || !instance.url) return;
+    document.body.classList.add("sagim-printing");
     try {
-      setImprimiendo(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
-      if (isTauri) {
-        const { appDataDir, join } = await import("@tauri-apps/api/path");
-        const { writeFile, mkdir, exists } = await import("@tauri-apps/plugin-fs");
-        const { openPath } = await import("@tauri-apps/plugin-opener");
-        
-        const appData = await appDataDir();
-        const tempDocsPath = await join(appData, "temp_docs");
-        
-        if (!(await exists(tempDocsPath))) {
-          await mkdir(tempDocsPath, { recursive: true });
-        }
-        
-        const filePath = await join(tempDocsPath, `${reporteId}_print_${Date.now()}.pdf`);
-        const arrayBuffer = await instance.blob.arrayBuffer();
-        await writeFile(filePath, new Uint8Array(arrayBuffer));
-        
-        await openPath(filePath);
-      } else {
-        const w = window.open(instance.url, "_blank");
-        w?.print();
-      }
-    } catch (e) {
-      console.error("Error al imprimir PDF:", e);
-    } finally {
-      setImprimiendo(false);
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("print_page");
+    } catch (err) {
+      console.error("[PRINT] Error:", err);
+      alert("Error al imprimir: " + String(err));
     }
+    setTimeout(() => document.body.classList.remove("sagim-printing"), 1000);
   };
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white flex-shrink-0 sagim-no-print">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onVolver}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />Volver a filtros
@@ -692,15 +669,15 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
             <Download className="w-3.5 h-3.5 mr-1.5" />
             {instance.loading || descargando ? "Preparando..." : "Descargar PDF"}
           </Button>
-          <Button size="sm" disabled={instance.loading || !instance.url || imprimiendo}
+          <Button size="sm"
             onClick={handleImprimir}
           >
             <Printer className="w-3.5 h-3.5 mr-1.5" />
-            {instance.loading || imprimiendo ? "Preparando..." : "Imprimir"}
+            Imprimir
           </Button>
         </div>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 sagim-print-area" id="sagim-pdf-container">
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <PDFViewer width="100%" height="100%" style={{ border: "none" }}>
           {doc as any}
