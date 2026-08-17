@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, X, RotateCcw, Check, VideoOff } from "lucide-react";
+import { Camera, X, RotateCcw, Check, VideoOff, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -24,9 +24,17 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
     
     async function startCamera() {
       // Verificar si el navegador soporta getUserMedia
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!navigator.mediaDevices) {
         if (mounted) {
-          setError("Su navegador no soporta acceso a la cámara.");
+          setError("La cámara no está disponible en este sistema. Esto puede ocurrir en algunas versiones de Windows. Intente actualizar WebView2 o use la función de cargar imagen desde archivo.");
+          setCameraState("error");
+        }
+        return;
+      }
+
+      if (typeof navigator.mediaDevices.getUserMedia !== "function") {
+        if (mounted) {
+          setError("La cámara no está disponible. En Windows, asegúrese de tener WebView2 Runtime actualizado.");
           setCameraState("error");
         }
         return;
@@ -119,6 +127,26 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
     }
   }, [capturedImage, stream, onCapture]);
 
+  const handleUploadFile = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/webp";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageData = event.target?.result as string;
+        if (imageData) {
+          onCapture(imageData);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }, [onCapture]);
+
   const handleClose = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -186,11 +214,17 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
           </div>
 
           {/* Botones */}
-          <div className="p-3 flex gap-2">
+          <div className="p-3 flex flex-col gap-2">
             {cameraState === "error" ? (
-              <Button variant="outline" onClick={handleClose} className="flex-1">
-                Cerrar
-              </Button>
+              <>
+                <Button variant="outline" onClick={handleUploadFile} className="flex-1">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Cargar imagen desde archivo
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleClose}>
+                  Cancelar
+                </Button>
+              </>
             ) : !capturedImage ? (
               <Button 
                 onClick={handleCapture} 
@@ -201,7 +235,7 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
                 Capturar
               </Button>
             ) : (
-              <>
+              <div className="flex gap-2">
                 <Button variant="outline" onClick={handleRetake} className="flex-1">
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Repetir
@@ -210,7 +244,7 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
                   <Check className="w-4 h-4 mr-2" />
                   Confirmar
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </CardContent>
