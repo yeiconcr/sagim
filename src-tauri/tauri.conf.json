@@ -44,9 +44,7 @@
       "entitlements": null,
       "exceptionDomain": null,
       "frameworks": [],
-      "infoPlist": {
-        "NSCameraUsageDescription": "SAGIM necesita acceso a la cámara para capturar fotos de los clientes."
-      },
+      "infoPlist": "Info.plist",
       "minimumSystemVersion": "10.13",
       "providerShortName": null,
       "signingIdentity": null
