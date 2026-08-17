@@ -260,11 +260,14 @@ interface FooterProps {
   generadoPor?: string;
 }
 
+// import package to get version dynamically
+import pkg from "../../../package.json";
+
 export function ReporteFooter({ pageNumber, totalPages, generadoPor }: FooterProps) {
   return (
     <View style={styles.footer} fixed>
       <Text style={styles.footerText}>
-        <Text>Generado el {today()} {generadoPor ? `por ${generadoPor}` : ""} · SAGIM v1.0.7</Text>
+        <Text>Generado el {today()} {generadoPor ? `por ${generadoPor}` : ""} · SAGIM v{pkg.version}</Text>
         {pageNumber !== undefined ? `  Página ${pageNumber} de ${totalPages ?? "?"}` : ""}
       </Text>
     </View>
