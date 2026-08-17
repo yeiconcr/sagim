@@ -312,15 +312,15 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
 
         {/* Registrar entrada */}
         {!cliente.ya_vino_hoy && (
-          <Button onClick={onRegistrarEntrada} className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold text-sm">
+          <Button onClick={onRegistrarEntrada} className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm">
             <LogIn className="w-4 h-4 mr-2" />Registrar Entrada
           </Button>
         )}
 
         {/* Botones de venta */}
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={onVentasGym} disabled={clienteInactivo} className="h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"><Dumbbell className="w-4 h-4 mr-2" />Ventas Gym</Button>
-          <Button onClick={onVentasTienda} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-sm"><ShoppingCart className="w-4 h-4 mr-2" />Ventas Tienda</Button>
+          <Button onClick={onVentasGym} disabled={clienteInactivo} className="h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-sm"><Dumbbell className="w-4 h-4 mr-2" />Ventas Gym</Button>
+          <Button onClick={onVentasTienda} className="h-10 bg-primary/80 hover:bg-primary/70 text-primary-foreground text-sm"><ShoppingCart className="w-4 h-4 mr-2" />Ventas Tienda</Button>
         </div>
 
         {/* Botones secundarios */}
