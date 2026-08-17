@@ -3,7 +3,7 @@ import {
   Search, Dumbbell, Store, UserX, RefreshCw,
   Phone, MapPin, AlertTriangle,
   CheckCircle2, XCircle, Clock, User, ChevronRight, ShoppingCart,
-  CreditCard, Ruler, Cake, History, LogIn, CalendarDays, AlertCircle, Banknote
+  CreditCard, Ruler, Cake, History, LogIn, CalendarDays, AlertCircle, Banknote, Camera
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, today, addDays, toISODate, daysBetween } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import { useAppStore } from "@/store/appStore";
 import { getDb } from "@/db/database";
 import { getAsistenciasCliente } from "@/db/queries/asistencias";
 import { useDebounce } from "@/hooks/useDebounce";
+import { WebcamCapture } from "@/components/shared/WebcamCapture";
+import { guardarFotoCliente } from "@/lib/photos";
 
 // =============================================
 // TIPOS
@@ -192,43 +194,49 @@ interface FichaClienteProps {
 }
 
 function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerMedidas, onVerAsistencias, onOtro, onFotoActualizada, onRegistrarEntrada }: FichaClienteProps) {
+  const [mostrarWebcam, setMostrarWebcam] = useState(false);
   const [actualizandoFoto, setActualizandoFoto] = useState(false);
   const estadoVenc = calcularEstadoVencimiento(cliente.dias_restantes);
   const vencConfig = ESTADO_VENC_CONFIG[estadoVenc];
   const VencIcon = vencConfig.icon;
   const clienteInactivo = cliente.estado === "I";
 
-
-
-  const handleCambiarFoto = async () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/jpeg,image/png,image/webp";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      try {
-        setActualizandoFoto(true);
-        const db = await getDb();
-        await db.execute("UPDATE clientes SET foto_path = $1 WHERE inscripcion = $2", [file.name, cliente.inscripcion]);
-        onFotoActualizada(file.name);
-      } catch (err) { console.error("Error:", err); }
-      finally { setActualizandoFoto(false); }
-    };
-    input.click();
+  const handleCapturarFoto = async (imageData: string) => {
+    try {
+      setActualizandoFoto(true);
+      setMostrarWebcam(false);
+      
+      // Guardar foto en el sistema de archivos
+      const fileName = await guardarFotoCliente(imageData, cliente.inscripcion);
+      
+      // Actualizar en la base de datos
+      const db = await getDb();
+      await db.execute("UPDATE clientes SET foto_path = $1 WHERE inscripcion = $2", [fileName, cliente.inscripcion]);
+      
+      onFotoActualizada(fileName);
+    } catch (err) {
+      console.error("Error guardando foto:", err);
+    } finally {
+      setActualizandoFoto(false);
+    }
   };
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Columna izquierda: foto + estado */}
       <div className="flex flex-col gap-3">
         <Card className="overflow-hidden">
-          <div className="aspect-[3/4] bg-slate-100 relative flex items-center justify-center cursor-pointer" onClick={handleCambiarFoto}>
+          <div className="aspect-[3/4] bg-slate-100 relative flex items-center justify-center cursor-pointer group" onClick={() => setMostrarWebcam(true)}>
             {cliente.foto_path ? (
               <img src={`/fotos/${cliente.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             ) : (
               <div className="flex flex-col items-center gap-2 text-slate-300"><User className="w-12 h-12" /><span className="text-xs">Sin foto</span></div>
             )}
+            {/* Overlay con ícono de cámara al hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+              <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             {actualizandoFoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /></div>}
             <div className={cn("absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold border", clienteInactivo ? "bg-red-100 text-red-700 border-red-200" : "bg-green-100 text-green-700 border-green-200")}>
               {clienteInactivo ? "INACTIVO" : "ACTIVO"}
@@ -333,6 +341,15 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
         <Button variant="ghost" size="sm" onClick={onOtro} className="text-xs"><RefreshCw className="w-3 h-3 mr-1" />Buscar otro cliente</Button>
       </div>
     </div>
+
+    {/* Modal Webcam */}
+    {mostrarWebcam && (
+      <WebcamCapture
+        onCapture={handleCapturarFoto}
+        onClose={() => setMostrarWebcam(false)}
+      />
+    )}
+    </>
   );
 }
 
