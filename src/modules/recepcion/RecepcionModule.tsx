@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Search, Dumbbell, Store, UserX, RefreshCw,
   Phone, MapPin, AlertTriangle,
-  CheckCircle2, XCircle, Clock, User, ChevronRight, ShoppingCart, Camera,
+  CheckCircle2, XCircle, Clock, User, ChevronRight, ShoppingCart,
   CreditCard, Ruler, Cake, History, LogIn, CalendarDays, AlertCircle, Banknote
 } from "lucide-react";
 import { cn, formatDate, formatCurrency, today, addDays, toISODate, daysBetween } from "@/lib/utils";
@@ -47,12 +47,12 @@ interface ClienteRecepcion {
   deuda_pendiente: number;
 }
 
+
+
 interface UltimoPago { fecha: string; concepto: string; valor: number; }
 interface NotaCliente { id: number; nota: string; tipo: "info" | "alerta" | "importante"; }
 interface ClienteReciente { cedula: string; nombre: string; foto_path: string | null; }
 interface ClienteBusqueda { inscripcion: number; cedula: string; nombres: string; apellidos: string; foto_path: string | null; estado: "A" | "I"; }
-
-
 
 type EstadoVencimiento = "vigente" | "vence-hoy" | "vence-pronto" | "vencido" | "sin-pagos";
 
@@ -100,6 +100,8 @@ async function buscarClientesCoincidentes(termino: string): Promise<ClienteBusqu
   }
 }
 
+
+
 async function cargarClienteCompleto(cedula: string): Promise<ClienteRecepcion | null> {
   const db = await getDb();
   const rows = await db.select<ClienteRecepcion[]>(`
@@ -125,6 +127,8 @@ async function cargarClienteCompleto(cedula: string): Promise<ClienteRecepcion |
     dias_restantes = daysBetween(today(), proximo_vencimiento);
   }
 
+
+
   // Últimos pagos y total
   const ultimosPagosRaw = await db.select<Array<{ fecha_pag: string; nombre_actividad: string | null; valor: number }>>(`
     SELECT p.fecha_pag, a.nombre as nombre_actividad, p.valor FROM pagos_cli p
@@ -145,6 +149,8 @@ async function cargarClienteCompleto(cedula: string): Promise<ClienteRecepcion |
     es_cumpleanos_hoy = dias_para_cumple === 0 || (hoy.getMonth() === nac.getMonth() && hoy.getDate() === nac.getDate());
     es_cumpleanos_semana = dias_para_cumple <= 7 && dias_para_cumple > 0;
   }
+
+
 
   // Asistencia
   const hoyStr = today();
@@ -171,7 +177,7 @@ async function cargarClienteCompleto(cedula: string): Promise<ClienteRecepcion |
 
 
 // =============================================
-// COMPONENTE FICHA CLIENTE (diseño simple)
+// COMPONENTE FICHA CLIENTE (diseño original compacto)
 // =============================================
 interface FichaClienteProps {
   cliente: ClienteRecepcion;
@@ -191,6 +197,8 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
   const vencConfig = ESTADO_VENC_CONFIG[estadoVenc];
   const VencIcon = vencConfig.icon;
   const clienteInactivo = cliente.estado === "I";
+
+
 
   const handleCambiarFoto = async () => {
     const input = document.createElement("input");
@@ -213,42 +221,44 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Columna izquierda: foto + estado */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         <Card className="overflow-hidden">
           <div className="aspect-[3/4] bg-slate-100 relative flex items-center justify-center cursor-pointer" onClick={handleCambiarFoto}>
             {cliente.foto_path ? (
               <img src={`/fotos/${cliente.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             ) : (
-              <div className="flex flex-col items-center gap-2 text-slate-300"><User className="w-16 h-16" /><span className="text-xs">Sin foto</span></div>
+              <div className="flex flex-col items-center gap-2 text-slate-300"><User className="w-12 h-12" /><span className="text-xs">Sin foto</span></div>
             )}
-            {actualizandoFoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /></div>}
+            {actualizandoFoto && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /></div>}
             <div className={cn("absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold border", clienteInactivo ? "bg-red-100 text-red-700 border-red-200" : "bg-green-100 text-green-700 border-green-200")}>
               {clienteInactivo ? "INACTIVO" : "ACTIVO"}
             </div>
-            {cliente.es_cumpleanos_hoy && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200 flex items-center gap-1"><Cake className="w-3 h-3" />¡Cumpleaños!</div>}
+            {cliente.es_cumpleanos_hoy && <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200 flex items-center gap-1"><Cake className="w-3 h-3" />¡Cumple!</div>}
           </div>
         </Card>
 
+
+
         {/* Estado vencimiento */}
         <Card className={cn("border", vencConfig.bg)}>
-          <CardContent className="p-4">
-            <div className={cn("flex items-center gap-2 mb-2", vencConfig.color)}><VencIcon className="w-5 h-5" /><span className="font-bold text-sm">{vencConfig.label}</span></div>
+          <CardContent className="p-3">
+            <div className={cn("flex items-center gap-2 mb-1", vencConfig.color)}><VencIcon className="w-4 h-4" /><span className="font-bold text-xs">{vencConfig.label}</span></div>
             {cliente.proximo_vencimiento ? (
               <>
-                <p className="text-xs text-slate-500">Vence:</p>
+                <p className="text-xs text-slate-500">Próximo vencimiento:</p>
                 <p className={cn("text-sm font-semibold", vencConfig.color)}>{formatDate(cliente.proximo_vencimiento)}</p>
-                {cliente.dias_restantes !== null && <p className="text-xs text-slate-400 mt-1">{cliente.dias_restantes < 0 ? `Hace ${Math.abs(cliente.dias_restantes)} días` : cliente.dias_restantes === 0 ? "Hoy" : `En ${cliente.dias_restantes} días`}</p>}
-                {cliente.actividad_vigente && <p className="text-xs text-slate-500 mt-2 italic truncate">{cliente.actividad_vigente}</p>}
+                {cliente.dias_restantes !== null && <p className="text-xs text-slate-400">{cliente.dias_restantes < 0 ? `Hace ${Math.abs(cliente.dias_restantes)} días` : cliente.dias_restantes === 0 ? "Hoy" : `En ${cliente.dias_restantes} días`}</p>}
+                {cliente.actividad_vigente && <p className="text-xs text-slate-500 mt-1 italic truncate">{cliente.actividad_vigente}</p>}
               </>
             ) : (<p className="text-xs text-slate-400">Sin pagos registrados</p>)}
           </CardContent>
         </Card>
 
-        {/* Asistencia */}
+        {/* Asistencia compacta */}
         <Card className={cn("border", cliente.ya_vino_hoy ? "bg-green-50 border-green-200" : "bg-slate-50 border-slate-200")}>
-          <CardContent className="p-4">
-            <div className={cn("flex items-center gap-2 mb-2", cliente.ya_vino_hoy ? "text-green-700" : "text-slate-600")}><LogIn className="w-5 h-5" /><span className="font-bold text-sm">{cliente.ya_vino_hoy ? "YA VINO HOY" : "ASISTENCIA"}</span></div>
-            <p className="text-lg font-bold text-slate-800">{cliente.visitas_mes} <span className="text-xs font-normal text-slate-500">visitas este mes</span></p>
+          <CardContent className="p-3">
+            <div className={cn("flex items-center gap-2 mb-1", cliente.ya_vino_hoy ? "text-green-700" : "text-slate-600")}><LogIn className="w-4 h-4" /><span className="font-bold text-xs">{cliente.ya_vino_hoy ? "YA VINO HOY" : "ASISTENCIA"}</span></div>
+            <p className="text-sm font-bold text-slate-800">{cliente.visitas_mes} <span className="text-xs font-normal text-slate-500">visitas este mes</span></p>
             {cliente.dias_sin_venir !== null && cliente.dias_sin_venir > 0 && !cliente.ya_vino_hoy && <p className="text-xs text-slate-400">Última visita hace {cliente.dias_sin_venir} días</p>}
           </CardContent>
         </Card>
@@ -257,68 +267,70 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
 
 
       {/* Columna derecha: datos + acciones */}
-      <div className="lg:col-span-2 flex flex-col gap-4">
+      <div className="lg:col-span-2 flex flex-col gap-3">
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-4">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-800 truncate">{cliente.nombre_completo}</h2>
+                <h2 className="text-lg font-bold text-slate-800 truncate">{cliente.nombre_completo}</h2>
                 <p className="text-slate-500 text-sm">CC: {cliente.cedula} · #{cliente.inscripcion}</p>
               </div>
             </div>
 
-            {/* Alertas */}
+            {/* Alertas compactas */}
             {(cliente.es_cumpleanos_semana || cliente.deuda_pendiente > 0 || cliente.notas.length > 0) && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-3 space-y-1.5">
                 {cliente.es_cumpleanos_semana && !cliente.es_cumpleanos_hoy && (
-                  <div className="flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200 text-amber-700 text-sm"><Cake className="w-4 h-4" />Cumpleaños en {cliente.dias_para_cumple} días</div>
+                  <div className="flex items-center gap-2 p-1.5 rounded bg-amber-50 border border-amber-200 text-amber-700 text-xs"><Cake className="w-3 h-3" />Cumpleaños en {cliente.dias_para_cumple} días</div>
                 )}
                 {cliente.deuda_pendiente > 0 && (
-                  <div className="flex items-center justify-between p-2 rounded bg-red-50 border border-red-200 text-red-700 text-sm"><span className="flex items-center gap-2"><Banknote className="w-4 h-4" />Saldo pendiente</span><span className="font-bold">{formatCurrency(cliente.deuda_pendiente)}</span></div>
+                  <div className="flex items-center justify-between p-1.5 rounded bg-red-50 border border-red-200 text-red-700 text-xs"><span className="flex items-center gap-1"><Banknote className="w-3 h-3" />Saldo pendiente</span><span className="font-bold">{formatCurrency(cliente.deuda_pendiente)}</span></div>
                 )}
-                {cliente.notas.map((n) => (
-                  <div key={n.id} className={cn("flex items-center gap-2 p-2 rounded border text-sm", n.tipo === "importante" ? "bg-red-50 border-red-200 text-red-700" : n.tipo === "alerta" ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-slate-50 border-slate-200 text-slate-600")}>
-                    {n.tipo === "importante" && <AlertCircle className="w-4 h-4" />}{n.tipo === "alerta" && <AlertTriangle className="w-4 h-4" />}{n.nota}
+                {cliente.notas.slice(0, 2).map((n) => (
+                  <div key={n.id} className={cn("flex items-center gap-1 p-1.5 rounded border text-xs", n.tipo === "importante" ? "bg-red-50 border-red-200 text-red-700" : n.tipo === "alerta" ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-slate-50 border-slate-200 text-slate-600")}>
+                    {n.tipo === "importante" && <AlertCircle className="w-3 h-3" />}{n.tipo === "alerta" && <AlertTriangle className="w-3 h-3" />}{n.nota}
                   </div>
                 ))}
               </div>
             )}
 
+
+
             {/* Contacto */}
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-slate-400" /><span>{cliente.celular || cliente.telefono || "—"}</span></div>
-              <div className="flex items-center gap-2 text-sm"><MapPin className="w-4 h-4 text-slate-400" /><span>{cliente.ciudad || "—"}</span></div>
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t text-sm">
+              <div className="flex items-center gap-2"><Phone className="w-3 h-3 text-slate-400" /><span>{cliente.celular || cliente.telefono || "—"}</span></div>
+              <div className="flex items-center gap-2"><MapPin className="w-3 h-3 text-slate-400" /><span>{cliente.ciudad || "—"}</span></div>
             </div>
 
             {/* Financiero */}
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t">
-              <div><p className="text-xs text-slate-400">Total gastado</p><p className="text-lg font-bold text-slate-800">{formatCurrency(cliente.total_gastado)}</p></div>
-              <div><p className="text-xs text-slate-400">Último pago</p>{cliente.ultimos_pagos.length > 0 ? <p className="text-lg font-bold text-slate-800">{formatCurrency(cliente.ultimos_pagos[0].valor)}</p> : <p className="text-sm text-slate-400">—</p>}</div>
+            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t">
+              <div><p className="text-xs text-slate-400">Total gastado</p><p className="text-base font-bold text-slate-800">{formatCurrency(cliente.total_gastado)}</p></div>
+              <div><p className="text-xs text-slate-400">Último pago</p>{cliente.ultimos_pagos.length > 0 ? <p className="text-base font-bold text-slate-800">{formatCurrency(cliente.ultimos_pagos[0].valor)}</p> : <p className="text-sm text-slate-400">—</p>}</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Registrar entrada */}
         {!cliente.ya_vino_hoy && (
-          <Button onClick={onRegistrarEntrada} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-bold">
-            <LogIn className="w-5 h-5 mr-2" />Registrar Entrada
+          <Button onClick={onRegistrarEntrada} className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold text-sm">
+            <LogIn className="w-4 h-4 mr-2" />Registrar Entrada
           </Button>
         )}
 
         {/* Botones de venta */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button onClick={onVentasGym} disabled={clienteInactivo} className="h-12 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"><Dumbbell className="w-5 h-5 mr-2" />Ventas Gym</Button>
-          <Button onClick={onVentasTienda} className="h-12 bg-emerald-600 hover:bg-emerald-700"><ShoppingCart className="w-5 h-5 mr-2" />Ventas Tienda</Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={onVentasGym} disabled={clienteInactivo} className="h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"><Dumbbell className="w-4 h-4 mr-2" />Ventas Gym</Button>
+          <Button onClick={onVentasTienda} className="h-10 bg-emerald-600 hover:bg-emerald-700 text-sm"><ShoppingCart className="w-4 h-4 mr-2" />Ventas Tienda</Button>
         </div>
 
         {/* Botones secundarios */}
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" size="sm" onClick={onVerPagos}><CreditCard className="w-4 h-4 mr-1" />Pagos</Button>
-          <Button variant="outline" size="sm" onClick={onVerMedidas}><Ruler className="w-4 h-4 mr-1" />Medidas</Button>
-          <Button variant="outline" size="sm" onClick={onVerAsistencias}><CalendarDays className="w-4 h-4 mr-1" />Asistencias</Button>
+          <Button variant="outline" size="sm" onClick={onVerPagos} className="text-xs"><CreditCard className="w-3 h-3 mr-1" />Pagos</Button>
+          <Button variant="outline" size="sm" onClick={onVerMedidas} className="text-xs"><Ruler className="w-3 h-3 mr-1" />Medidas</Button>
+          <Button variant="outline" size="sm" onClick={onVerAsistencias} className="text-xs"><CalendarDays className="w-3 h-3 mr-1" />Asistencias</Button>
         </div>
 
-        <Button variant="ghost" onClick={onOtro}><RefreshCw className="w-4 h-4 mr-2" />Buscar otro cliente</Button>
+        <Button variant="ghost" size="sm" onClick={onOtro} className="text-xs"><RefreshCw className="w-3 h-3 mr-1" />Buscar otro cliente</Button>
       </div>
     </div>
   );
@@ -356,6 +368,8 @@ export function RecepcionModule() {
     });
   }, []);
 
+
+
   useEffect(() => { if (clientePrecargado) { setBusqueda(clientePrecargado); handleSeleccionarCliente(clientePrecargado); setClientePrecargado(null); } }, []);
   useEffect(() => { if (!cliente && coincidencias.length === 0) setTimeout(() => inputRef.current?.focus(), 100); }, [cliente, coincidencias.length]);
   useEffect(() => {
@@ -387,6 +401,8 @@ export function RecepcionModule() {
 
   useEffect(() => { if (autoSearchEnabled && debouncedBusqueda.trim().length >= 3 && !cliente) handleBuscar(debouncedBusqueda); }, [debouncedBusqueda, cliente, handleBuscar, autoSearchEnabled]);
 
+
+
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter") handleBuscar(); if (e.key === "Escape") { if (coincidencias.length > 0) setCoincidencias([]); else handleOtro(); } };
   const handleSeleccionarReciente = (cedula: string) => { setBusqueda(cedula); handleSeleccionarCliente(cedula); };
   const handleOtro = () => { setAutoSearchEnabled(false); setCliente(null); setCoincidencias([]); setNoEncontrado(false); setError(null); setBusqueda(""); setMostrarAsistencias(false); setHistorialAsistencias(null); setTimeout(() => { inputRef.current?.focus(); setAutoSearchEnabled(true); }, DEBOUNCE_MS + 100); };
@@ -415,128 +431,65 @@ export function RecepcionModule() {
 
 
   // =============================================
-  // RENDER
+  // RENDER (diseño original con max-w-4xl)
   // =============================================
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50">
+    <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Recepción</h1>
-        <p className="text-sm text-slate-500">Buscar cliente por cédula, inscripción o nombre</p>
+        <p className="text-slate-500 text-sm mt-1">Busque un cliente por cédula, número de inscripción o nombre</p>
       </div>
 
-      {/* Si hay cliente seleccionado, mostrar ficha */}
-      {cliente ? (
-        <div className="flex-1 overflow-auto">
-          <FichaCliente
-            cliente={cliente}
-            onVentasGym={handleVentasGym}
-            onVentasTienda={handleVentasTienda}
-            onVerPagos={handleVerPagos}
-            onVerMedidas={handleVerMedidas}
-            onVerAsistencias={handleVerAsistencias}
-            onOtro={handleOtro}
-            onFotoActualizada={(nuevaFoto) => setCliente({ ...cliente, foto_path: nuevaFoto })}
-            onRegistrarEntrada={handleRegistrarEntrada}
-          />
-
-          {/* Modal Asistencias */}
-          {mostrarAsistencias && historialAsistencias && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setMostrarAsistencias(false)}>
-              <Card className="w-full max-w-md max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                <CardContent className="p-0">
-                  <div className="p-4 border-b bg-slate-50">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <History className="w-5 h-5" />Historial de Asistencias
-                    </h3>
-                    <p className="text-sm text-slate-500">{cliente.nombre_completo}</p>
-                  </div>
-                  <div className="p-4 grid grid-cols-2 gap-4 border-b">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-slate-800">{historialAsistencias.visitasMes}</p>
-                      <p className="text-xs text-slate-500">Este mes</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-slate-800">{historialAsistencias.visitasTotal}</p>
-                      <p className="text-xs text-slate-500">Total</p>
-                    </div>
-                  </div>
-                  <div className="max-h-64 overflow-auto p-4">
-                    {historialAsistencias.historial.length === 0 ? (
-                      <p className="text-center text-slate-400 py-4">Sin registros</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {historialAsistencias.historial.map((a, i) => (
-                          <div key={i} className="flex justify-between items-center p-2 rounded bg-slate-50">
-                            <span className="text-sm font-medium">{formatDate(a.fecha)}</span>
-                            <span className="text-xs text-slate-500">{a.hora}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 border-t">
-                    <Button variant="outline" className="w-full" onClick={() => setMostrarAsistencias(false)}>Cerrar</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Vista de búsqueda */
-        <div className="flex-1 flex flex-col items-center pt-8">
-          {/* Buscador */}
-          <div className="w-full max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="Cédula, inscripción o nombre..."
-                value={busqueda}
-                onChange={(e) => { setBusqueda(e.target.value); setNoEncontrado(false); setError(null); }}
-                onKeyDown={handleKeyDown}
-                className="pl-10 h-12 text-lg"
-                autoFocus
-              />
-              {buscando && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <span className="w-5 h-5 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin block" />
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-slate-400 mt-2 text-center">Enter para buscar · Esc para limpiar</p>
+      {/* Buscador (diseño original) */}
+      {!cliente && (
+        <div className="mb-6 flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+            <Input
+              ref={inputRef}
+              value={busqueda}
+              onChange={(e) => { setBusqueda(e.target.value); setNoEncontrado(false); setError(null); }}
+              onKeyDown={handleKeyDown}
+              placeholder="Cédula, número de inscripción o nombre..."
+              className={cn("pl-14 h-14 text-lg rounded-2xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-visible:ring-blue-500/50 bg-white transition-all", noEncontrado && "ring-2 ring-red-400")}
+              autoComplete="off"
+            />
           </div>
+          <Button onClick={() => handleBuscar()} disabled={buscando || !busqueda.trim()} className="h-14 px-8 rounded-2xl text-base shadow-[0_8px_30px_rgb(0,0,0,0.06)] bg-blue-600 hover:bg-blue-700">
+            {buscando ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Search className="w-5 h-5 mr-2" />Buscar</>}
+          </Button>
+        </div>
+      )}
+
+
+
+      {/* Mensajes y coincidencias */}
+      {!cliente && (
+        <div className="mb-6">
+          {noEncontrado && (
+            <div className="flex items-center gap-2 text-red-600 text-sm"><UserX className="w-4 h-4" /><span>Cliente no encontrado: <strong>{busqueda}</strong></span></div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 text-red-600 text-sm"><XCircle className="w-4 h-4" /><span>{error}</span></div>
+          )}
 
           {/* Lista de coincidencias */}
           {coincidencias.length > 0 && (
-            <Card className="w-full max-w-md mt-4">
+            <Card className="mt-4">
               <CardContent className="p-0">
-                <div className="p-3 border-b bg-slate-50">
-                  <p className="text-sm font-medium text-slate-600">{coincidencias.length} coincidencias</p>
-                </div>
-                <div className="max-h-64 overflow-auto">
+                <div className="p-3 border-b bg-slate-50"><p className="text-sm font-medium text-slate-600">{coincidencias.length} coincidencias encontradas</p></div>
+                <div className="max-h-48 overflow-auto">
                   {coincidencias.map((c) => (
-                    <button
-                      key={c.cedula}
-                      onClick={() => handleSeleccionarCliente(c.cedula)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors border-b last:border-b-0 text-left"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {c.foto_path ? (
-                          <img src={`/fotos/${c.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        ) : (
-                          <User className="w-5 h-5 text-slate-400" />
-                        )}
+                    <button key={c.cedula} onClick={() => handleSeleccionarCliente(c.cedula)} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors border-b last:border-b-0 text-left">
+                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {c.foto_path ? <img src={`/fotos/${c.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <User className="w-4 h-4 text-slate-400" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-800 truncate">{c.nombres} {c.apellidos}</p>
+                        <p className="font-medium text-slate-800 text-sm truncate">{c.nombres} {c.apellidos}</p>
                         <p className="text-xs text-slate-500">CC: {c.cedula} · #{c.inscripcion}</p>
                       </div>
-                      <div className={cn("px-2 py-0.5 rounded text-xs font-medium", c.estado === "A" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
-                        {c.estado === "A" ? "Activo" : "Inactivo"}
-                      </div>
+                      <div className={cn("px-2 py-0.5 rounded text-xs font-medium", c.estado === "A" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>{c.estado === "A" ? "Activo" : "Inactivo"}</div>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
                     </button>
                   ))}
@@ -544,68 +497,91 @@ export function RecepcionModule() {
               </CardContent>
             </Card>
           )}
+        </div>
+      )}
 
-          {/* Error */}
-          {error && (
-            <Card className="w-full max-w-md mt-4 border-red-200 bg-red-50">
-              <CardContent className="p-4 flex items-center gap-3 text-red-700">
-                <AlertTriangle className="w-5 h-5" />
-                <span>{error}</span>
-              </CardContent>
-            </Card>
+
+
+      {/* Ficha cliente */}
+      {cliente && (
+        <>
+          <FichaCliente cliente={cliente} onVentasGym={handleVentasGym} onVentasTienda={handleVentasTienda} onVerPagos={handleVerPagos} onVerMedidas={handleVerMedidas} onVerAsistencias={handleVerAsistencias} onOtro={handleOtro} onFotoActualizada={(f) => setCliente({ ...cliente, foto_path: f })} onRegistrarEntrada={handleRegistrarEntrada} />
+
+          {/* Modal Asistencias */}
+          {mostrarAsistencias && historialAsistencias && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setMostrarAsistencias(false)}>
+              <Card className="w-full max-w-sm max-h-[70vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <CardContent className="p-0">
+                  <div className="p-3 border-b bg-slate-50">
+                    <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><History className="w-4 h-4" />Historial de Asistencias</h3>
+                    <p className="text-xs text-slate-500">{cliente.nombre_completo}</p>
+                  </div>
+                  <div className="p-3 grid grid-cols-2 gap-3 border-b">
+                    <div className="text-center"><p className="text-xl font-bold text-slate-800">{historialAsistencias.visitasMes}</p><p className="text-xs text-slate-500">Este mes</p></div>
+                    <div className="text-center"><p className="text-xl font-bold text-slate-800">{historialAsistencias.visitasTotal}</p><p className="text-xs text-slate-500">Total</p></div>
+                  </div>
+                  <div className="max-h-48 overflow-auto p-3">
+                    {historialAsistencias.historial.length === 0 ? (<p className="text-center text-slate-400 py-4 text-sm">Sin registros</p>) : (
+                      <div className="space-y-1.5">{historialAsistencias.historial.map((a, i) => (<div key={i} className="flex justify-between items-center p-2 rounded bg-slate-50 text-sm"><span className="font-medium">{formatDate(a.fecha)}</span><span className="text-xs text-slate-500">{a.hora}</span></div>))}</div>
+                    )}
+                  </div>
+                  <div className="p-3 border-t"><Button variant="outline" size="sm" className="w-full" onClick={() => setMostrarAsistencias(false)}>Cerrar</Button></div>
+                </CardContent>
+              </Card>
+            </div>
           )}
+        </>
+      )}
 
-          {/* No encontrado */}
-          {noEncontrado && (
-            <Card className="w-full max-w-md mt-4 border-amber-200 bg-amber-50">
-              <CardContent className="p-4 flex items-center gap-3 text-amber-700">
-                <UserX className="w-5 h-5" />
-                <span>No se encontró ningún cliente</span>
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Clientes recientes */}
-          {recientes.length > 0 && coincidencias.length === 0 && !noEncontrado && !error && (
-            <div className="w-full max-w-md mt-6">
-              <p className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2">
-                <Clock className="w-4 h-4" />Consultados recientemente
-              </p>
+
+      {/* Estado inicial con cards (diseño original) */}
+      {!cliente && !noEncontrado && !buscando && coincidencias.length === 0 && (
+        <>
+          {/* Recientes */}
+          {recientes.length > 0 && !busqueda && (
+            <div className="mb-6">
+              <p className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2"><Clock className="w-4 h-4" />Consultados recientemente</p>
               <div className="flex flex-wrap gap-2">
                 {recientes.map((r) => (
-                  <button
-                    key={r.cedula}
-                    onClick={() => handleSeleccionarReciente(r.cedula)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                      {r.foto_path ? (
-                        <img src={`/fotos/${r.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                      ) : (
-                        <User className="w-3 h-3 text-slate-400" />
-                      )}
+                  <button key={r.cedula} onClick={() => handleSeleccionarReciente(r.cedula)} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm">
+                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
+                      {r.foto_path ? <img src={`/fotos/${r.foto_path}`} alt="" className="w-full h-full object-cover" /> : <User className="w-3 h-3 text-slate-400" />}
                     </div>
-                    <span className="text-sm text-slate-700 max-w-[120px] truncate">{r.nombre}</span>
+                    <span className="text-slate-700 max-w-[100px] truncate">{r.nombre}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Estado inicial */}
-          {coincidencias.length === 0 && !noEncontrado && !error && recientes.length === 0 && !busqueda && (
-            <div className="mt-12 text-center">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                <Search className="w-10 h-10 text-blue-500" />
-              </div>
-              <h2 className="text-xl font-semibold text-slate-700">Bienvenido a Recepción</h2>
-              <p className="text-slate-500 mt-2 max-w-sm mx-auto">
-                Ingresa la cédula, número de inscripción o nombre del cliente para comenzar
-              </p>
+          {/* Cards informativos */}
+          {!busqueda && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: Search, title: "Buscar cliente", desc: "Ingrese la cédula, número de inscripción o nombre", color: "text-blue-500", bg: "bg-gradient-to-br from-blue-50 to-slate-100/50" },
+                { icon: Dumbbell, title: "Ventas Gym", desc: "Registre pagos de membresías y servicios", color: "text-indigo-500", bg: "bg-gradient-to-br from-indigo-50 to-indigo-100/50" },
+                { icon: Store, title: "Ventas Tienda", desc: "Venda suplementos, ropa y artículos", color: "text-emerald-500", bg: "bg-gradient-to-br from-emerald-50 to-emerald-100/50" },
+              ].map((item) => (
+                <Card key={item.title} className="border-0 bg-transparent overflow-hidden">
+                  <div className={cn("p-6 text-center h-full flex flex-col items-center justify-center transition-transform hover:-translate-y-1 duration-300", item.bg)}>
+                    <div className="p-3 bg-white rounded-2xl shadow-sm mb-3"><item.icon className={cn("w-6 h-6", item.color)} /></div>
+                    <p className="text-sm font-bold text-slate-800 mb-1">{item.title}</p>
+                    <p className="text-xs text-slate-500">{item.desc}</p>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
-        </div>
+        </>
       )}
+
+      {/* Atajos de teclado */}
+      <div className="mt-6 text-center">
+        <p className="text-xs text-slate-400">
+          <kbd className="bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 text-xs font-mono">Enter</kbd> buscar · <kbd className="bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 text-xs font-mono">Esc</kbd> limpiar
+        </p>
+      </div>
     </div>
   );
 }
