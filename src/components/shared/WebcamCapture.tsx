@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Camera, X, RotateCcw, Check } from "lucide-react";
+import { Camera, X, RotateCcw, Check, VideoOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -8,19 +8,32 @@ interface WebcamCaptureProps {
   onClose: () => void;
 }
 
+type CameraState = "loading" | "requesting" | "active" | "error";
+
 export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [cameraState, setCameraState] = useState<CameraState>("loading");
 
   // Iniciar cámara
   useEffect(() => {
     let mounted = true;
     
     async function startCamera() {
+      // Verificar si el navegador soporta getUserMedia
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (mounted) {
+          setError("Su navegador no soporta acceso a la cámara.");
+          setCameraState("error");
+        }
+        return;
+      }
+
+      setCameraState("requesting");
+
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
@@ -30,13 +43,28 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
         if (mounted && videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           setStream(mediaStream);
-          setLoading(false);
+          setCameraState("active");
+        } else if (mediaStream) {
+          // Si el componente se desmontó, detener el stream
+          mediaStream.getTracks().forEach(track => track.stop());
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Error accediendo a la cámara:", err);
         if (mounted) {
-          setError("No se pudo acceder a la cámara. Verifique los permisos.");
-          setLoading(false);
+          const error = err as Error & { name?: string };
+          // Mensajes específicos según el tipo de error
+          if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+            setError("Permiso de cámara denegado. Por favor permita el acceso a la cámara cuando el sistema lo solicite.");
+          } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+            setError("No se encontró ninguna cámara conectada al equipo.");
+          } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+            setError("La cámara está siendo usada por otra aplicación. Ciérrela e intente de nuevo.");
+          } else if (error.name === "OverconstrainedError") {
+            setError("La cámara no cumple con los requisitos mínimos.");
+          } else {
+            setError(`Error al acceder a la cámara: ${error.message || "Error desconocido"}`);
+          }
+          setCameraState("error");
         }
       }
     }
@@ -45,9 +73,6 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
 
     return () => {
       mounted = false;
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
     };
   }, []);
 
@@ -118,14 +143,28 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
 
           {/* Vista de cámara / imagen capturada */}
           <div className="relative aspect-[4/3] bg-black">
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center">
+            {cameraState === "loading" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <span className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <p className="text-white/70 text-sm">Iniciando...</p>
+              </div>
+            )}
+
+            {cameraState === "requesting" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
+                <Camera className="w-12 h-12 text-white/70" />
+                <p className="text-white text-center text-sm">
+                  Solicitando acceso a la cámara...
+                </p>
+                <p className="text-white/50 text-center text-xs">
+                  Por favor permita el acceso cuando el sistema lo solicite
+                </p>
               </div>
             )}
             
-            {error && (
-              <div className="absolute inset-0 flex items-center justify-center p-4">
+            {cameraState === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
+                <VideoOff className="w-12 h-12 text-red-400" />
                 <p className="text-white text-center text-sm">{error}</p>
               </div>
             )}
@@ -136,7 +175,7 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover"
+                className={cameraState === "active" ? "w-full h-full object-cover" : "hidden"}
               />
             ) : (
               <img src={capturedImage} alt="Captura" className="w-full h-full object-cover" />
@@ -148,10 +187,14 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
 
           {/* Botones */}
           <div className="p-3 flex gap-2">
-            {!capturedImage ? (
+            {cameraState === "error" ? (
+              <Button variant="outline" onClick={handleClose} className="flex-1">
+                Cerrar
+              </Button>
+            ) : !capturedImage ? (
               <Button 
                 onClick={handleCapture} 
-                disabled={loading || !!error}
+                disabled={cameraState !== "active"}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
                 <Camera className="w-4 h-4 mr-2" />
