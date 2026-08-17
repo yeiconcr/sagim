@@ -319,8 +319,8 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
 
         {/* Botones de venta */}
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={onVentasGym} disabled={clienteInactivo} className="h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-sm"><Dumbbell className="w-4 h-4 mr-2" />Ventas Gym</Button>
-          <Button onClick={onVentasTienda} className="h-10 bg-primary/80 hover:bg-primary/70 text-primary-foreground text-sm"><ShoppingCart className="w-4 h-4 mr-2" />Ventas Tienda</Button>
+          <Button variant="outline" onClick={onVentasGym} disabled={clienteInactivo} className="h-10 border-primary text-primary hover:bg-primary/10 disabled:opacity-50 text-sm"><Dumbbell className="w-4 h-4 mr-2" />Ventas Gym</Button>
+          <Button variant="outline" onClick={onVentasTienda} className="h-10 border-primary text-primary hover:bg-primary/10 text-sm"><ShoppingCart className="w-4 h-4 mr-2" />Ventas Tienda</Button>
         </div>
 
         {/* Botones secundarios */}
