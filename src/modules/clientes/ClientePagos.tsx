@@ -90,10 +90,11 @@ export function ClientePagos({ cliente, onVolver }: Props) {
   ];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="h-full overflow-y-auto">
+    <div className="p-6 max-w-6xl mx-auto min-h-full">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={onVolver} className="h-9 w-9">
+        <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={onVolver} className="h-9 w-9">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -149,17 +150,16 @@ export function ClientePagos({ cliente, onVolver }: Props) {
       {loading ? (
         <PageLoading text="Cargando pagos..." />
       ) : (
-        <div style={{ height: "400px" }}>
-          <DataTable
-            columns={columns}
-            data={pagos}
-            searchPlaceholder="Buscar en pagos..."
-            emptyMessage="Este cliente no tiene pagos registrados."
-            pageSize={15}
-            showSearch={pagos.length > 10}
-          />
-        </div>
+        <DataTable
+          columns={columns}
+          data={pagos}
+          searchPlaceholder="Buscar en pagos..."
+          emptyMessage="Este cliente no tiene pagos registrados."
+          pageSize={15}
+          showSearch={pagos.length > 10}
+        />
       )}
+    </div>
     </div>
   );
 }

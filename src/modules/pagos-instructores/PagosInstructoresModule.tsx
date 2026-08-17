@@ -88,29 +88,32 @@ export function PagosInstructoresModule() {
   const totalPagado = pagos.reduce((s, p) => s + p.valor, 0);
 
   const columns: ColumnDef<PagoIns>[] = [
-    { accessorKey: "fecha_pag", header: "Fecha", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
+    { accessorKey: "fecha_pag", header: "Fecha", size: 110, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
     {
-      accessorKey: "nombre_instructor", header: "Instructor",
+      accessorKey: "nombre_instructor", header: "Instructor", size: 220,
       cell: ({ getValue }) => <span className="font-medium text-sm">{getValue<string>() || "—"}</span>,
     },
-    { accessorKey: "nombre_especialidad", header: "Especialidad", size: 130, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "nombre_especialidad", header: "Especialidad", size: 180, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
     {
-      id: "periodo", header: "Período", size: 180,
+      id: "periodo", header: "Período", size: 200,
       cell: ({ row }) => (
         <span className="text-sm text-slate-500">
-          {formatDate(row.original.periodo_ini)} — {formatDate(row.original.periodo_fin)}
+          {row.original.periodo_ini && row.original.periodo_fin 
+            ? `${formatDate(row.original.periodo_ini)} — ${formatDate(row.original.periodo_fin)}`
+            : "—"}
         </span>
       ),
     },
-    { accessorKey: "valor", header: "Valor", size: 120, cell: ({ getValue }) => <span className="font-semibold text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
-    { accessorKey: "observaciones", header: "Observaciones", cell: ({ getValue }) => <span className="text-xs text-slate-500">{stripRtf(getValue<string>()) || "—"}</span> },
+    { accessorKey: "valor", header: "Valor", size: 130, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
+    { accessorKey: "observaciones", header: "Obs.", size: 180, cell: ({ getValue }) => <span className="text-sm text-slate-500 truncate block">{stripRtf(getValue<string>()) || "—"}</span> },
   ];
 
   if (vista === "nuevo") {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-5xl mx-auto min-h-full">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => setVista("lista")} className="h-9 w-9">
+          <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={() => setVista("lista")} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h1 className="text-xl font-bold text-slate-800">Nuevo Pago a Instructor</h1>
@@ -169,11 +172,12 @@ export function PagosInstructoresModule() {
           </Button>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader
         title="Pagos a Instructores"
         description={`Total pagado: ${formatCurrency(totalPagado)}`}

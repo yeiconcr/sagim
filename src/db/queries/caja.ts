@@ -22,12 +22,24 @@ export async function getMovimientosCaja(params: QueryParams = {}): Promise<Pagi
   const where = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
 
   const countRows = await dbSelect<{ c: number }>(
-    `SELECT COUNT(*) as c FROM mov_caja ${where}`, args
+    `SELECT COUNT(*) as c 
+     FROM mov_caja m 
+     LEFT JOIN clientes c ON m.cedula = c.cedula
+     LEFT JOIN instructores i ON m.cedula = i.cedula
+     LEFT JOIN proveedores p ON m.cedula = p.nit
+     ${where.replace(/fecha/g, 'm.fecha').replace(/concepto/g, 'm.concepto').replace(/referencia/g, 'm.referencia').replace(/cedula/g, 'm.cedula')}`, args
   );
   const total = countRows[0]?.c ?? 0;
 
   const data = await dbSelect<MovCaja>(
-    `SELECT * FROM mov_caja ${where} ORDER BY fecha DESC, id DESC
+    `SELECT m.*, 
+       COALESCE(c.nombres || ' ' || c.apellidos, i.nombres || ' ' || i.apellidos, p.nombre) as nombre_cliente 
+     FROM mov_caja m
+     LEFT JOIN clientes c ON m.cedula = c.cedula
+     LEFT JOIN instructores i ON m.cedula = i.cedula
+     LEFT JOIN proveedores p ON m.cedula = p.nit
+     ${where.replace(/fecha/g, 'm.fecha').replace(/concepto/g, 'm.concepto').replace(/referencia/g, 'm.referencia').replace(/cedula/g, 'm.cedula')} 
+     ORDER BY m.fecha DESC, m.id DESC
      LIMIT $${args.length + 1} OFFSET $${args.length + 2}`,
     [...args, pageSize, offset]
   );

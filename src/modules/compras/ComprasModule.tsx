@@ -20,6 +20,7 @@ import { getCompras, guardarCompra } from "@/db/queries/compras";
 import { getProveedores, getFormasPago } from "@/db/queries/catalogos";
 import { getInventario } from "@/db/queries/inventario";
 import { formatDate, formatCurrency, today } from "@/lib/utils";
+import { CrearArticuloRapido } from "./CrearArticuloRapido";
 
 type Vista = "lista" | "nuevo";
 
@@ -47,6 +48,7 @@ export function ComprasModule() {
   const [idFormaPago, setIdFormaPago] = useState("");
   const [plazo, setPlazo] = useState(0);
   const [observaciones, setObservaciones] = useState("");
+  const [showCrearArticulo, setShowCrearArticulo] = useState(false);
   const [articuloSel, setArticuloSel] = useState("");
   const [guardando, setGuardando] = useState(false);
   const { success, error } = useToast();
@@ -82,11 +84,20 @@ export function ComprasModule() {
   };
 
   const agregarItem = () => {
+    if (articuloSel === "GASTO") {
+      setItems((prev) => [...prev, { id: Date.now().toString(), codigo: "GASTO", detalle: "", cantidad: 1, punitario: 0, total: 0 }]);
+      setArticuloSel("");
+      return;
+    }
     const art = articulos.find((a) => a.codigo === articuloSel);
     if (!art) return;
     const punitario = art.precio_compra;
     setItems((prev) => [...prev, { id: Date.now().toString(), codigo: art.codigo, detalle: art.nombre, cantidad: 1, punitario, total: punitario }]);
     setArticuloSel("");
+  };
+
+  const handleActualizarDetalleLibre = (id: string, nuevoDetalle: string) => {
+    setItems((prev) => prev.map((i) => i.id === id ? { ...i, detalle: nuevoDetalle } : i));
   };
 
   const actualizarItem = (id: string, campo: "cantidad" | "punitario", valor: number) => {
@@ -103,6 +114,7 @@ export function ComprasModule() {
   const handleGuardar = async () => {
     if (!idProveedor) { error("Falta proveedor", "Seleccione un proveedor."); return; }
     if (items.length === 0) { error("Sin ítems", "Agregue artículos a la compra."); return; }
+    if (items.some(i => !i.detalle.trim())) { error("Descripción faltante", "Todos los gastos libres o artículos deben tener una descripción."); return; }
     setGuardando(true);
     try {
       const nroCompra = await guardarCompra({
@@ -129,24 +141,18 @@ export function ComprasModule() {
   const columns: ColumnDef<Compra>[] = [
     { accessorKey: "nro_compra", header: "N° Compra", size: 100, cell: ({ getValue }) => <span className="font-mono font-bold text-sm">{String(getValue<number>()).padStart(6, "0")}</span> },
     { accessorKey: "fecha", header: "Fecha", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
-    { accessorKey: "nombre_proveedor", header: "Proveedor", cell: ({ getValue }) => <span className="font-medium text-sm">{getValue<string>() || "—"}</span> },
-    { accessorKey: "nombre_forma_pago", header: "Forma Pago", size: 110, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
-    { accessorKey: "total", header: "Total", size: 120, cell: ({ getValue }) => <span className="font-semibold text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
-    {
-      accessorKey: "estado", header: "Estado", size: 90,
-      cell: ({ getValue }) => (
-        <Badge variant={getValue<string>() === "A" ? "success" : "destructive"} className="text-xs">
-          {getValue<string>() === "A" ? "ACTIVA" : "ANULADA"}
-        </Badge>
-      ),
-    },
+    { accessorKey: "nombre_proveedor", header: "Proveedor", size: 200, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "nombre_forma_pago", header: "Forma Pago", size: 120, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "total", header: "Total", size: 120, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
+    { accessorKey: "estado", header: "Estado", size: 90, cell: ({ getValue }) => <Badge variant={getValue<string>() === "A" ? "success" : "destructive"} className="text-xs">{getValue<string>() === "A" ? "ACTIVA" : "ANULADA"}</Badge> },
   ];
 
   if (vista === "nuevo") {
     return (
-      <div className="p-6 max-w-4xl mx-auto flex flex-col gap-4">
+      <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-5xl mx-auto min-h-full flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setVista("lista")} className="h-9 w-9">
+          <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={() => setVista("lista")} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h1 className="text-xl font-bold text-slate-800">Nueva Compra a Proveedor</h1>
@@ -187,11 +193,13 @@ export function ComprasModule() {
           <CardContent className="space-y-3">
             <div className="flex gap-2">
               <Select value={articuloSel} onValueChange={setArticuloSel}>
-                <SelectTrigger className="h-9 flex-1"><SelectValue placeholder="Seleccionar artículo..." /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="h-9 flex-1"><SelectValue placeholder="Seleccionar artículo o gasto libre..." /></SelectTrigger>
+                <SelectContent position="item-aligned">
+                  <SelectItem value="GASTO" className="font-bold text-orange-600">Gasto Libre (Sin Inventario)</SelectItem>
                   {articulos.map((a) => <SelectItem key={a.codigo} value={a.codigo}><span className="font-mono text-xs mr-2 text-slate-400">{a.codigo}</span>{a.nombre} <span className="text-xs text-slate-400 ml-1">({formatCurrency(a.precio_compra)})</span></SelectItem>)}
                 </SelectContent>
               </Select>
+              <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setShowCrearArticulo(true)}><PlusIcon className="w-3.5 h-3.5 mr-1.5" />Nuevo Artículo</Button>
               <Button type="button" size="sm" className="h-9" onClick={agregarItem} disabled={!articuloSel}><PlusIcon className="w-3.5 h-3.5 mr-1.5" />Agregar</Button>
             </div>
 
@@ -209,7 +217,11 @@ export function ComprasModule() {
                 <tbody className="divide-y divide-slate-100">
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-2 py-1.5 font-medium">{item.detalle}</td>
+                      <td className="px-2 py-1.5 font-medium">
+                        {item.codigo === "GASTO" 
+                          ? <Input value={item.detalle} onChange={(e) => handleActualizarDetalleLibre(item.id, e.target.value)} className="h-7 text-sm" placeholder="Descripción del gasto..." />
+                          : item.detalle}
+                      </td>
                       <td className="px-2 py-1.5"><Input type="number" min="1" step="1" value={item.cantidad} onChange={(e) => actualizarItem(item.id, "cantidad", Number(e.target.value))} className="h-7 text-right text-sm w-14" /></td>
                       <td className="px-2 py-1.5"><Input type="number" min="0" step="100" value={item.punitario} onChange={(e) => actualizarItem(item.id, "punitario", Number(e.target.value))} className="h-7 text-right text-sm w-28" /></td>
                       <td className="px-2 py-1.5 text-right font-semibold tabular-nums">{formatCurrency(item.total)}</td>
@@ -237,12 +249,22 @@ export function ComprasModule() {
             {guardando ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Guardando...</span> : <><Save className="w-4 h-4 mr-1.5" />Registrar Compra</>}
           </Button>
         </div>
+        <CrearArticuloRapido 
+          open={showCrearArticulo} 
+          onClose={() => setShowCrearArticulo(false)} 
+          onSuccess={(nuevo) => {
+            setArticulos((prev) => [...prev, nuevo]);
+            setArticuloSel(nuevo.codigo);
+            setShowCrearArticulo(false);
+          }} 
+        />
+      </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader title="Compras a Proveedores" description="Registro de compras con actualización automática de inventario" actions={<Button onClick={abrirNuevo} size="sm"><Plus className="w-4 h-4 mr-1.5" />Nueva Compra</Button>} />
       {loading ? <PageLoading text="Cargando compras..." /> : (
         <DataTable columns={columns} data={compras} searchPlaceholder="Buscar por proveedor..." emptyMessage="No hay compras registradas." pageSize={20} />

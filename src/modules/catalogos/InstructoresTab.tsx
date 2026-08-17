@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Pencil, X, Save, UserCheck, UserX } from "lucide-react";
+import { Plus, Pencil, X, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormField } from "@/components/shared/FormField";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { PAGE_SIZE } from "@/lib/constants";
 import { useToast } from "@/store/toastStore";
 import type { Instructor, Especialidad } from "@/db/types";
 import {
@@ -134,20 +135,18 @@ export function InstructoresTab() {
   };
 
   const columns: ColumnDef<Instructor>[] = [
+    { accessorKey: "cedula", header: "Cédula", size: 100, cell: ({ getValue }) => <span className="font-mono text-sm">{getValue<string>()}</span> },
     {
       id: "nombre",
       header: "Nombre",
+      size: 280,
       accessorFn: (r) => `${r.nombres} ${r.apellidos}`,
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium text-sm">{row.original.nombres} {row.original.apellidos}</p>
-          <p className="text-xs text-slate-400">{row.original.cedula}</p>
-        </div>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.nombres} {row.original.apellidos}</span>,
     },
     {
       accessorKey: "nombre_especialidad",
       header: "Especialidad",
+      size: 200,
       cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span>,
     },
     {
@@ -173,27 +172,35 @@ export function InstructoresTab() {
       ),
     },
     {
-      id: "acciones", header: "", size: 80,
+      id: "acciones", header: "", size: 100,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
-            <Pencil className="w-3.5 h-3.5 text-slate-500" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setConfirmToggle(row.original); }}>
-            {row.original.estado === "A"
-              ? <UserX className="w-3.5 h-3.5 text-orange-500" />
-              : <UserCheck className="w-3.5 h-3.5 text-green-500" />
-            }
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
+            <Pencil className="w-4 h-4 text-slate-500" />
+            <span className="text-[10px] text-slate-600">Editar</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); setConfirmToggle(row.original); }}>
+            {row.original.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+            <span className="text-[10px] text-slate-600">{row.original.estado === "A" ? "Inactivar" : "Activar"}</span>
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col h-full gap-3">
+      <div className="flex justify-between items-center flex-shrink-0">
+        <p className="text-sm text-slate-500">{instructores.filter(i => i.estado === "A").length} instructores activos</p>
+        {!mostrarForm && (
+          <Button size="sm" onClick={abrirNuevo}>
+            <Plus className="w-4 h-4 mr-1.5" />Nuevo Instructor
+          </Button>
+        )}
+      </div>
+
       {mostrarForm && (
-        <Card>
+        <Card className="flex-shrink-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-slate-600">
               {editando ? `Editar: ${editando.nombres}` : "Nuevo Instructor"}
@@ -253,17 +260,8 @@ export function InstructoresTab() {
         </Card>
       )}
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{instructores.filter(i => i.estado === "A").length} instructores activos</p>
-        {!mostrarForm && (
-          <Button size="sm" onClick={abrirNuevo}>
-            <Plus className="w-4 h-4 mr-1.5" />Nuevo Instructor
-          </Button>
-        )}
-      </div>
-
-      <div className="flex-1" style={{ minHeight: 0 }}>
-        <DataTable columns={columns} data={instructores} searchPlaceholder="Buscar instructores..." onRowClick={abrirEditar} emptyMessage="No hay instructores registrados." pageSize={15} />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DataTable columns={columns} data={instructores} searchPlaceholder="Buscar instructores..." emptyMessage="No hay instructores registrados." pageSize={PAGE_SIZE.CATALOG} />
       </div>
 
       <ConfirmDialog

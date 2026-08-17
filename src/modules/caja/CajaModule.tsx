@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/shared/DataTable";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
+import { useIsMounted } from "@/hooks/useAsyncEffect";
+import { PAGE_SIZE } from "@/lib/constants";
 import { useToast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import type { MovCaja, ResumenCaja } from "@/db/types";
@@ -37,6 +39,7 @@ export function CajaModule() {
   const [guardandoMan, setGuardandoMan] = useState(false);
   const { success, error } = useToast();
   const { usuario } = useAuthStore();
+  const isMounted = useIsMounted();
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -45,16 +48,17 @@ export function CajaModule() {
         getMovimientosCaja({ pageSize: 500, fechaDesde, fechaHasta }),
         getResumenCaja(fechaDesde, fechaHasta),
       ]);
+      if (!isMounted()) return;
       let data = movs.data;
       if (filtroNatural !== "todos") data = data.filter((m) => m.natural === filtroNatural);
       setMovimientos(data);
       setResumen(res);
     } catch (err) {
-      error("Error", String(err));
+      if (isMounted()) error("Error", String(err));
     } finally {
-      setLoading(false);
+      if (isMounted()) setLoading(false);
     }
-  }, [fechaDesde, fechaHasta, filtroNatural, error]);
+  }, [fechaDesde, fechaHasta, filtroNatural, error, isMounted]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -78,41 +82,28 @@ export function CajaModule() {
 
   const columns: ColumnDef<MovCaja>[] = [
     { accessorKey: "fecha", header: "Fecha", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
-    { accessorKey: "referencia", header: "Referencia", size: 100, cell: ({ getValue }) => <span className="text-xs font-mono text-slate-500">{getValue<string>() || "—"}</span> },
-    { accessorKey: "cedula", header: "Cliente/Prov.", size: 110, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
-    { accessorKey: "concepto", header: "Concepto", cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "referencia", header: "Ref.", size: 100, cell: ({ getValue }) => {
+      const val = getValue<string>();
+      if (!val) return <span className="text-xs text-slate-400">—</span>;
+      // Mostrar con padding si es número
+      const num = Number(val);
+      if (!isNaN(num)) return <span className="text-xs font-mono text-slate-500">{String(num).padStart(6, "0")}</span>;
+      return <span className="text-xs font-mono text-slate-500">{val}</span>;
+    }},
+    { accessorKey: "cedula", header: "Cliente/Prov.", size: 180, cell: ({ row }) => <span className="text-sm">{row.original.nombre_cliente || row.original.cedula || "—"}</span> },
+    { accessorKey: "concepto", header: "Concepto", size: 200, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "natural", header: "Tipo", size: 80, cell: ({ getValue }) => <Badge variant={getValue<string>() === "I" ? "success" : "destructive"} className="text-xs">{getValue<string>() === "I" ? "INGRESO" : "EGRESO"}</Badge> },
+    { accessorKey: "valor", header: "Valor", size: 120, cell: ({ row }) => <span className={cn("text-sm tabular-nums", row.original.natural === "I" ? "text-green-700" : "text-red-600")}>{row.original.natural === "I" ? "+" : "-"}{formatCurrency(row.original.valor)}</span> },
     {
-      accessorKey: "natural", header: "Tipo", size: 80,
-      cell: ({ getValue }) => {
-        const n = getValue<string>();
-        return (
-          <Badge variant={n === "I" ? "success" : "destructive"} className="text-xs">
-            {n === "I" ? "INGRESO" : "EGRESO"}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: "valor", header: "Valor", size: 130,
-      cell: ({ row }) => {
-        const n = row.original.natural;
-        const v = row.original.valor;
-        return (
-          <span className={cn("font-semibold text-sm tabular-nums", n === "I" ? "text-green-700" : "text-red-600")}>
-            {n === "I" ? "+" : "-"}{formatCurrency(v)}
-          </span>
-        );
-      },
-    },
-    {
-      id: "acciones", header: "", size: 50,
+      id: "acciones", header: "", size: 80,
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end">
           <Button
-            variant="ghost" size="icon" className="h-7 w-7" title="Imprimir recibo"
+            variant="ghost" size="sm" className="h-auto py-1.5 px-2 flex flex-col items-center gap-0.5"
             onClick={(e) => { e.stopPropagation(); setMovAImprimir(row.original); }}
           >
-            <Printer className="w-3.5 h-3.5 text-slate-600" />
+            <Printer className="w-4 h-4 text-slate-600" />
+            <span className="text-[10px] text-slate-500">Imprimir</span>
           </Button>
         </div>
       ),
@@ -120,7 +111,7 @@ export function CajaModule() {
   ];
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader
         title="Caja"
         description="Arqueo y movimientos financieros"
@@ -173,7 +164,7 @@ export function CajaModule() {
 
       {/* Movimiento manual inline */}
       {mostrarMovManual && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-blue-200 bg-blue-50/50 flex-shrink-0">
           <CardContent className="p-4">
             <p className="text-sm font-semibold text-blue-700 mb-3">Registrar movimiento manual</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -236,7 +227,7 @@ export function CajaModule() {
           data={movimientos}
           searchPlaceholder="Buscar por concepto, referencia..."
           emptyMessage="No hay movimientos para los filtros seleccionados."
-          pageSize={25}
+          pageSize={PAGE_SIZE.LIST}
         />
       )}
 

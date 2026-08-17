@@ -19,3 +19,4 @@ export { EgresosPDF } from "./EgresosPDF";
 export { CobrosRealizadosPDF } from "./CobrosRealizadosPDF";
 export { ReciboInstructorPDF } from "./ReciboInstructorPDF";
 export { ReciboCajaPOSPDF } from "./ReciboCajaPOSPDF";
+export { AsistenciasPDF } from "./AsistenciasPDF";

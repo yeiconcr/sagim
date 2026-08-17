@@ -3,7 +3,7 @@
  * Soporta: paginación, búsqueda global, ordenamiento por columna, click en fila.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -73,8 +73,12 @@ export function DataTable<TData, TValue = unknown>({
   const currentPage = table.getState().pagination.pageIndex + 1;
   const filteredTotal = table.getFilteredRowModel().rows.length;
 
+  useEffect(() => {
+    table.setPageIndex(0);
+  }, [globalFilter, table]);
+
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
       {/* Toolbar */}
       {(showSearch || toolbar) && (
         <div className="flex items-center justify-between gap-3 flex-shrink-0">
@@ -97,9 +101,9 @@ export function DataTable<TData, TValue = unknown>({
       )}
 
       {/* Tabla */}
-      <div className="flex-1 overflow-auto rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div className="flex-1 overflow-auto rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-0">
         <table className="w-full text-sm">
-          <thead className="bg-transparent border-b border-slate-100/60 sticky top-0 z-10 backdrop-blur-md">
+          <thead className="bg-white border-b border-slate-100 sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -167,7 +171,7 @@ export function DataTable<TData, TValue = unknown>({
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3.5 text-slate-700">
+                    <td key={cell.id} className="px-4 py-3.5 text-slate-700 whitespace-nowrap">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

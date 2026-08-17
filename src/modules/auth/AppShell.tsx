@@ -1,8 +1,9 @@
 import { useEffect, useState, Suspense, lazy, memo, useCallback } from "react";
-import {
-  Dumbbell, Users, BookOpen, Package, TrendingUp,
-  Store, Truck, Wallet, CreditCard, UserCheck, Calendar,
-  FileText, Settings, LogOut, Menu, ChevronLeft, Bell,
+import { 
+  Menu, X, LogOut, ChevronLeft, ChevronRight, Monitor,
+  Users, Layers, Package, Dumbbell, Store, ShoppingCart, 
+  Wallet, CreditCard, HandCoins, RefreshCw, PieChart, 
+  Settings, Key, Image as ImageIcon, Bell 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,23 +74,24 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: "recepcion",           label: "Recepción",          icon: Dumbbell },
+  { id: "recepcion",           label: "Recepción",          icon: Monitor },
   { id: "clientes",            label: "Clientes",            icon: Users },
-  { id: "catalogos",           label: "Catálogos",           icon: BookOpen },
+  { id: "catalogos",           label: "Catálogos",           icon: Layers },
   { id: "inventario",          label: "Inventario",          icon: Package },
-  { id: "ventas-gym",          label: "Ventas Gym",          icon: TrendingUp,  separator: true },
+  { id: "ventas-gym",          label: "Ventas Gym",          icon: Dumbbell,    separator: true },
   { id: "ventas-tienda",       label: "Ventas Tienda",       icon: Store },
-  { id: "compras",             label: "Compras",             icon: Truck },
+  { id: "compras",             label: "Compras",             icon: ShoppingCart },
   { id: "caja",                label: "Caja",                icon: Wallet,      separator: true },
   { id: "cartera",             label: "Cartera",             icon: CreditCard },
-  { id: "pagos-instructores",  label: "Pagos Instructores",  icon: UserCheck },
-  { id: "procesos",            label: "Procesos",            icon: Calendar,    separator: true, badge: true },
-  { id: "reportes",            label: "Reportes",            icon: FileText },
+  { id: "pagos-instructores",  label: "Pagos Instructores",  icon: HandCoins },
+  { id: "procesos",            label: "Procesos",            icon: RefreshCw,   separator: true, badge: true },
+  { id: "reportes",            label: "Reportes",            icon: PieChart },
   { id: "configuracion",       label: "Configuración",       icon: Settings,    separator: true, nivelMinimo: 1 },
 ];
 
 interface SidebarProps {
   nombreGimnasio: string;
+  logoPath: string;
   moduloActivo: ModuloActivo;
   sidebarCollapsed: boolean;
   vencimientosHoy: number;
@@ -103,7 +105,7 @@ interface SidebarProps {
 }
 
 const Sidebar = memo(function Sidebar({
-  nombreGimnasio, moduloActivo, sidebarCollapsed, vencimientosHoy,
+  nombreGimnasio, logoPath, moduloActivo, sidebarCollapsed, vencimientosHoy,
   nivelUsuario, nombreUsuario, cargoUsuario, appVersion,
   onSetModulo, onToggle, onLogout,
 }: SidebarProps) {
@@ -122,7 +124,7 @@ const Sidebar = memo(function Sidebar({
         sidebarCollapsed ? "px-3 justify-center" : "px-4 gap-3"
       )}>
         <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-transparent overflow-hidden">
-          <img src={sagimLogo} alt="Logo" className="w-full h-full object-contain" />
+          <img src={logoPath || sagimLogo} alt="Logo" className="w-full h-full object-contain" />
         </div>
         {!sidebarCollapsed && (
           <div className="min-w-0 flex-1">
@@ -179,12 +181,6 @@ const Sidebar = memo(function Sidebar({
 
       {/* Footer */}
       <div className="border-t border-slate-700/60 p-2 flex-shrink-0">
-        {!sidebarCollapsed && (
-          <div className="px-2 py-1 mb-1">
-            <p className="text-[11px] text-slate-400 truncate leading-tight">{cargoUsuario}</p>
-            <p className="text-xs font-semibold text-slate-200 truncate leading-tight">{nombreUsuario}</p>
-          </div>
-        )}
         <button
           onClick={onLogout}
           className={cn(
@@ -224,7 +220,7 @@ const Topbar = memo(function Topbar({
   return (
     <header className="flex items-center justify-between h-14 px-4 border-b bg-white flex-shrink-0 shadow-sm relative z-10">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-8 w-8 text-slate-500 hover:text-slate-700">
+        <Button variant="ghost" size="icon" title="Alternar Menú" aria-label="Alternar Menú" onClick={onToggleSidebar} className="h-8 w-8 text-slate-500 hover:text-slate-700">
           {sidebarCollapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
         <Separator orientation="vertical" className="h-5" />
@@ -241,12 +237,17 @@ const Topbar = memo(function Topbar({
             {vencimientosHoy} vencimiento{vencimientosHoy !== 1 ? "s" : ""}
           </button>
         )}
-        <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs">
-          <span className="font-medium text-slate-700">{nombreUsuario}</span>
-          <span className="text-slate-300">|</span>
-          <span>{nivelUsuario === 1 ? "Admin" : "Operador"}</span>
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-sm font-semibold text-slate-800 leading-tight">{nombreUsuario}</span>
+            <span className="text-xs text-slate-500 leading-tight font-medium">
+              {nivelUsuario === 1 ? "Administrador" : "Operador"}
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm ring-1 ring-primary/20">
+            {nombreUsuario.charAt(0).toUpperCase()}
+          </div>
         </div>
-        <Separator orientation="vertical" className="h-5 hidden md:block" />
       </div>
     </header>
   );
@@ -261,6 +262,7 @@ export function AppShell() {
   const { usuario, logout } = useAuthStore();
   const { moduloActivo, sidebarCollapsed, vencimientosHoy, setModulo, toggleSidebar, setVencimientosHoy } = useAppStore();
   const [nombreGimnasio, setNombreGimnasio] = useState("SAGIM");
+  const [logoPath, setLogoPath] = useState("");
   const [appVersion, setAppVersion] = useState("");
 
   // Cargar nombre del gimnasio y vencimientos UNA SOLA VEZ al montar
@@ -269,12 +271,13 @@ export function AppShell() {
     async function loadData() {
       try {
         const db = await getDb();
-        const params = await db.select<Array<{ nombre_gimnasio: string; dias_alerta_vencimiento: number }>>(
-          "SELECT nombre_gimnasio, dias_alerta_vencimiento FROM parametros LIMIT 1"
+        const params = await db.select<Array<{ nombre_gimnasio: string; dias_alerta_vencimiento: number; logo_path: string | null }>>(
+          "SELECT nombre_gimnasio, dias_alerta_vencimiento, logo_path FROM parametros LIMIT 1"
         );
         if (cancelled || params.length === 0) return;
 
         setNombreGimnasio(params[0].nombre_gimnasio || "SAGIM");
+        if (params[0].logo_path) setLogoPath(params[0].logo_path);
 
         const diasAlerta = params[0].dias_alerta_vencimiento || 5;
         const hoy = today();
@@ -316,6 +319,7 @@ export function AppShell() {
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar
         nombreGimnasio={nombreGimnasio}
+        logoPath={logoPath}
         moduloActivo={moduloActivo}
         sidebarCollapsed={sidebarCollapsed}
         vencimientosHoy={vencimientosHoy}
@@ -339,7 +343,7 @@ export function AppShell() {
           onIrProcesos={handleIrProcesos}
         />
 
-        <main className="flex-1 overflow-auto bg-slate-50 relative z-0">
+        <main className="flex-1 min-h-0 overflow-hidden bg-slate-50 relative z-0">
           <ModuleRenderer modulo={moduloActivo} />
         </main>
       </div>

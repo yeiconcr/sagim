@@ -385,6 +385,28 @@ async function createTables(db: Database): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_pagos_ins_instructor ON pagos_ins(id_instructor)`,
     `CREATE INDEX IF NOT EXISTS idx_pagos_ins_fecha ON pagos_ins(fecha_pag)`,
 
+    // Tabla de asistencias (registro de entradas al gym)
+    `CREATE TABLE IF NOT EXISTS asistencias (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      inscripcion INTEGER NOT NULL,
+      fecha TEXT NOT NULL DEFAULT (date('now')),
+      hora TEXT NOT NULL DEFAULT (time('now', 'localtime')),
+      tipo TEXT DEFAULT 'E'
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_asistencias_inscripcion ON asistencias(inscripcion)`,
+    `CREATE INDEX IF NOT EXISTS idx_asistencias_fecha ON asistencias(fecha)`,
+
+    // Tabla de notas/alertas del cliente
+    `CREATE TABLE IF NOT EXISTS notas_cliente (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      inscripcion INTEGER NOT NULL,
+      nota TEXT NOT NULL,
+      tipo TEXT DEFAULT 'info',
+      activa INTEGER DEFAULT 1,
+      fecha_creacion TEXT NOT NULL DEFAULT (date('now'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_notas_cliente_inscripcion ON notas_cliente(inscripcion)`,
+
     // Índices compuestos para queries frecuentes y costosas
     `CREATE INDEX IF NOT EXISTS idx_pagos_cli_estado_periodo ON pagos_cli(estado, periodicidad, inscripcion, fecha_pag)`,
     `CREATE INDEX IF NOT EXISTS idx_clientes_estado_nombre ON clientes(estado, nombres, apellidos)`,

@@ -112,12 +112,25 @@ export async function guardarCompra(params: {
 
   if (params.plazo === 0) {
     // Contado: egreso en caja
+    // Obtener nombre del proveedor para el concepto
+    const provResult = await dbSelect<{ nombre: string, nit: string }>(
+      "SELECT nombre, nit FROM proveedores WHERE id = $1",
+      [params.idProveedor]
+    );
+    const nombreProv = provResult.length > 0 ? provResult[0].nombre : `Proveedor #${params.idProveedor}`;
+    const nitProv = provResult.length > 0 ? provResult[0].nit : null;
+    
+    // Armar el concepto con el primer ítem
+    const primerItem = params.items.length > 0 ? params.items[0].detalle : "";
+    const extraInfo = params.items.length > 1 ? " y otros" : "";
+    const concepto = `Compra a ${nombreProv} - ${primerItem}${extraInfo}`;
+
     ops.push({
-      sql: `INSERT INTO mov_caja (referencia, fecha, natural, concepto, valor, val_egre, usuario)
-            VALUES ($1,$2,'E',$3,$4,$5,$6)`,
+      sql: `INSERT INTO mov_caja (referencia, fecha, cedula, natural, concepto, valor, val_egre, usuario)
+            VALUES ($1,$2,$3,'E',$4,$5,$6,$7)`,
       params: [
-        String(nroCompra), fechaHoy,
-        `Compra a Proveedor No. ${nroCompra}`,
+        String(nroCompra), fechaHoy, nitProv,
+        concepto,
         params.total, params.total, params.usuario,
       ],
     });
@@ -141,12 +154,16 @@ export async function guardarCompra(params: {
 
   // Kardex + stock fuera de transacción
   for (const item of params.items) {
-    await createKardexEntrada(
-      item.codigo, fechaHoy,
-      `Compra No. ${nroCompra}`,
-      item.cantidad, item.punitario
-    );
-    await incrementarStock(item.codigo, item.cantidad);
+    if (item.codigo && item.codigo !== "GASTO") {
+      await createKardexEntrada(
+        item.codigo, fechaHoy,
+        `Compra No. ${nroCompra}`,
+        item.cantidad, item.punitario
+      );
+      await incrementarStock(item.codigo, item.cantidad);
+      // Actualizar el costo de compra en el inventario al nuevo precio adquirido
+      await dbExecute("UPDATE inventario SET precio_compra = $1 WHERE codigo = $2", [item.punitario, item.codigo]);
+    }
   }
 
   return nroCompra;

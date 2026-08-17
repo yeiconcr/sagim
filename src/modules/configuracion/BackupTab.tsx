@@ -78,7 +78,7 @@ export function BackupTab() {
   };
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl space-y-5 overflow-y-auto flex-1 min-h-0 pb-4">
       {/* Respaldar */}
       <Card>
         <CardContent className="p-5">

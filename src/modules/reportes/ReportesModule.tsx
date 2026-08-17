@@ -8,13 +8,14 @@ import { PDFViewer, usePDF } from "@react-pdf/renderer";
 import {
   FileText, Users, Package, BarChart2, Wallet, TrendingUp,
   Truck, CreditCard, UserCheck, Calendar, Scale, ArrowLeft,
-  Printer, Download, Filter,
+  Printer, Download, Filter, Contact, TrendingDown, Coins, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormField } from "@/components/shared/FormField";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
 import { useToast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
@@ -25,6 +26,7 @@ import { getRecibos, getDetReciboPorNro, getFacturasTienda, getDetFacturaTiendaP
 import { getMovimientosCaja } from "@/db/queries/caja";
 import { getCompras } from "@/db/queries/compras";
 import { getPagosInstructores } from "@/db/queries/pagosIns";
+import { getAsistencias, getAsistenciasEstadisticas } from "@/db/queries/asistencias";
 import { getMedidasByInscripcion, getClienteByCedula } from "@/db/queries/clientes";
 import { getPagosByInscripcion } from "@/db/queries/clientes";
 import {
@@ -32,6 +34,7 @@ import {
   InventarioPDF, KardexPDF, TrazabilidadMedidasPDF,
   MovimientoCajaPDF, VentasDiariasPDF, ComprasRealizadasPDF,
   CuentasPorPagarPDF, EgresosPDF, CobrosRealizadosPDF, ReciboInstructorPDF,
+  AsistenciasPDF,
 } from "@/components/pdf/reportes";
 import { formatDate, formatCurrency, today, exportToExcel } from "@/lib/utils";
 import type { Parametros } from "@/db/types";
@@ -45,22 +48,39 @@ interface ReporteConfig {
   descripcion: string;
   icono: React.ElementType;
   categoria: string;
+  colorTheme: "blue" | "green" | "purple" | "orange" | "rose" | "teal";
   filtros: Array<"fechaDesde" | "fechaHasta" | "cedula" | "codigoArticulo" | "estado">;
 }
 
+const COLOR_THEMES = {
+  blue: { bg: "from-blue-50 to-indigo-50 border-blue-100/50", text: "text-blue-600 group-hover:text-indigo-600" },
+  green: { bg: "from-green-50 to-emerald-50 border-green-100/50", text: "text-green-600 group-hover:text-emerald-600" },
+  purple: { bg: "from-purple-50 to-fuchsia-50 border-purple-100/50", text: "text-purple-600 group-hover:text-fuchsia-600" },
+  orange: { bg: "from-orange-50 to-amber-50 border-orange-100/50", text: "text-orange-600 group-hover:text-amber-600" },
+  rose: { bg: "from-rose-50 to-pink-50 border-rose-100/50", text: "text-rose-600 group-hover:text-pink-600" },
+  teal: { bg: "from-teal-50 to-cyan-50 border-teal-100/50", text: "text-teal-600 group-hover:text-cyan-600" },
+};
+
 const REPORTES: ReporteConfig[] = [
-  { id: "listado-clientes", titulo: "Listado de Clientes", descripcion: "Todos los clientes registrados", icono: Users, categoria: "Clientes", filtros: ["estado"] },
-  { id: "ficha-cliente", titulo: "Ficha de Inscripción", descripcion: "Ficha personal de un cliente con medidas", icono: FileText, categoria: "Clientes", filtros: ["cedula"] },
-  { id: "trazabilidad-medidas", titulo: "Trazabilidad de Medidas", descripcion: "Historial de medidas corporales por cliente", icono: Scale, categoria: "Clientes", filtros: ["cedula"] },
-  { id: "inventario", titulo: "Inventario de Productos", descripcion: "Stock y precios de todos los artículos", icono: Package, categoria: "Inventario", filtros: ["estado"] },
-  { id: "kardex", titulo: "Kárdex de Artículos", descripcion: "Movimientos de un artículo por período", icono: BarChart2, categoria: "Inventario", filtros: ["codigoArticulo", "fechaDesde", "fechaHasta"] },
-  { id: "ventas-diarias", titulo: "Ventas Diarias", descripcion: "Recibos gym + facturas tienda del período", icono: TrendingUp, categoria: "Ventas", filtros: ["fechaDesde", "fechaHasta"] },
-  { id: "movimiento-caja", titulo: "Movimiento de Caja", descripcion: "Todos los movimientos financieros del período", icono: Wallet, categoria: "Finanzas", filtros: ["fechaDesde", "fechaHasta"] },
-  { id: "egresos", titulo: "Egresos", descripcion: "Solo movimientos de salida del período", icono: TrendingUp, categoria: "Finanzas", filtros: ["fechaDesde", "fechaHasta"] },
-  { id: "cobros-realizados", titulo: "Cobros Realizados", descripcion: "Pagos recibidos de clientes en el período", icono: CreditCard, categoria: "Finanzas", filtros: ["fechaDesde", "fechaHasta"] },
-  { id: "compras-realizadas", titulo: "Compras Realizadas", descripcion: "Compras a proveedores del período", icono: Truck, categoria: "Compras", filtros: ["fechaDesde", "fechaHasta"] },
-  { id: "cuentas-por-pagar", titulo: "Cuentas por Pagar", descripcion: "Saldos pendientes con proveedores", icono: CreditCard, categoria: "Compras", filtros: [] },
-  { id: "pagos-instructores", titulo: "Recibo Pago Instructor", descripcion: "Comprobante de pago a un instructor", icono: UserCheck, categoria: "Instructores", filtros: ["fechaDesde", "fechaHasta"] },
+  { id: "listado-clientes", titulo: "Listado de Clientes", descripcion: "Todos los clientes registrados", icono: Users, categoria: "Clientes", colorTheme: "blue", filtros: ["estado"] },
+  { id: "ficha-cliente", titulo: "Ficha de Inscripción", descripcion: "Ficha personal de un cliente con medidas", icono: Contact, categoria: "Clientes", colorTheme: "blue", filtros: ["cedula"] },
+  { id: "trazabilidad-medidas", titulo: "Trazabilidad de Medidas", descripcion: "Historial de medidas corporales por cliente", icono: Scale, categoria: "Clientes", colorTheme: "blue", filtros: ["cedula"] },
+  
+  { id: "inventario", titulo: "Inventario de Productos", descripcion: "Stock y precios de todos los artículos", icono: Package, categoria: "Inventario", colorTheme: "purple", filtros: ["estado"] },
+  { id: "kardex", titulo: "Kárdex de Artículos", descripcion: "Movimientos de un artículo por período", icono: BarChart2, categoria: "Inventario", colorTheme: "purple", filtros: ["codigoArticulo", "fechaDesde", "fechaHasta"] },
+  
+  { id: "ventas-diarias", titulo: "Ventas Diarias", descripcion: "Recibos gym + facturas tienda del período", icono: TrendingUp, categoria: "Ventas", colorTheme: "green", filtros: ["fechaDesde", "fechaHasta"] },
+  
+  { id: "movimiento-caja", titulo: "Movimiento de Caja", descripcion: "Todos los movimientos financieros del período", icono: Wallet, categoria: "Finanzas", colorTheme: "teal", filtros: ["fechaDesde", "fechaHasta"] },
+  { id: "egresos", titulo: "Egresos", descripcion: "Solo movimientos de salida del período", icono: TrendingDown, categoria: "Finanzas", colorTheme: "rose", filtros: ["fechaDesde", "fechaHasta"] },
+  { id: "cobros-realizados", titulo: "Cobros Realizados", descripcion: "Pagos recibidos de clientes en el período", icono: Coins, categoria: "Finanzas", colorTheme: "teal", filtros: ["fechaDesde", "fechaHasta"] },
+  
+  { id: "compras-realizadas", titulo: "Compras Realizadas", descripcion: "Compras a proveedores del período", icono: Truck, categoria: "Compras", colorTheme: "orange", filtros: ["fechaDesde", "fechaHasta"] },
+  { id: "cuentas-por-pagar", titulo: "Cuentas por Pagar", descripcion: "Saldos pendientes con proveedores", icono: Receipt, categoria: "Compras", colorTheme: "orange", filtros: [] },
+  
+  { id: "pagos-instructores", titulo: "Recibo Pago Instructor", descripcion: "Comprobante de pago a un instructor", icono: UserCheck, categoria: "Instructores", colorTheme: "rose", filtros: ["fechaDesde", "fechaHasta"] },
+  
+  { id: "asistencias", titulo: "Control de Asistencias", descripcion: "Registro de entradas al gimnasio", icono: Calendar, categoria: "Control", colorTheme: "teal", filtros: ["fechaDesde", "fechaHasta"] },
 ];
 
 // =============================================
@@ -131,8 +151,11 @@ export function ReportesModule() {
         }
         case "movimiento-caja": {
           const result = await getMovimientosCaja({ pageSize: 99999, fechaDesde, fechaHasta });
-          headers = ["Fecha", "Referencia", "Concepto", "Tipo", "Valor"];
-          rows = result.data.map(m => [m.fecha, m.referencia, m.concepto, m.natural === "I" ? "INGRESO" : "EGRESO", m.valor]);
+          headers = ["Fecha", "Referencia", "Cliente/Prov.", "Concepto", "Tipo", "Valor"];
+          rows = result.data.map(m => {
+            const ref = m.referencia && !isNaN(Number(m.referencia)) ? String(m.referencia).padStart(6, "0") : m.referencia;
+            return [m.fecha, ref, m.nombre_cliente || m.cedula || "—", m.concepto, m.natural === "I" ? "INGRESO" : "EGRESO", m.valor];
+          });
           break;
         }
         case "egresos": {
@@ -158,6 +181,12 @@ export function ReportesModule() {
           const result = await getPagosInstructores({ pageSize: 99999, fechaDesde, fechaHasta });
           headers = ["Fecha Pago", "Instructor", "Especialidad", "Periodo Ini", "Periodo Fin", "Valor"];
           rows = result.data.map(p => [p.fecha_pag, p.nombre_instructor, p.nombre_especialidad, p.periodo_ini, p.periodo_fin, p.valor]);
+          break;
+        }
+        case "asistencias": {
+          const result = await getAsistencias({ fechaDesde, fechaHasta, pageSize: 99999 });
+          headers = ["Fecha", "Hora", "Inscripción", "Cédula", "Cliente"];
+          rows = result.data.map(a => [a.fecha, a.hora, a.inscripcion, a.cedula, a.nombre_completo]);
           break;
         }
         case "kardex": {
@@ -315,6 +344,7 @@ export function ReportesModule() {
             headers={[
               { label: "Fecha", key: "fecha", width: 70 },
               { label: "Referencia", key: "referencia", width: 80 },
+              { label: "Cliente/Prov.", key: "cedula", width: 100 },
               { label: "Concepto", key: "concepto" },
               { label: "Tipo", key: "natural", width: 55, align: "center" },
               { label: "Valor", key: "valor", width: 90, align: "right" },
@@ -324,6 +354,11 @@ export function ReportesModule() {
               if (key === "fecha") return formatDate(row.fecha as string);
               if (key === "valor") return formatCurrency(row.valor as number);
               if (key === "natural") return row.natural === "I" ? "INGRESO" : "EGRESO";
+              if (key === "cedula") return String(row.nombre_cliente || row.cedula || "—");
+              if (key === "referencia") {
+                const ref = String(row.referencia || "");
+                return ref && !isNaN(Number(ref)) ? ref.padStart(6, "0") : ref || "—";
+              }
               return String(row[key] ?? "—");
             }}
             totales={{ "Total Ingresos": totalI, "Total Egresos": totalE, "Saldo": totalI - totalE }}
@@ -465,6 +500,30 @@ export function ReportesModule() {
           break;
         }
 
+        case "asistencias": {
+          const result = await getAsistencias({ fechaDesde, fechaHasta, pageSize: 9999 });
+          const estadisticas = await getAsistenciasEstadisticas({ fechaDesde, fechaHasta });
+          doc = <AsistenciasPDF
+            {...paramsBase}
+            titulo="CONTROL DE ASISTENCIAS"
+            subtitulo={`Período: ${formatDate(fechaDesde)} — ${formatDate(fechaHasta)}`}
+            headers={[
+              { label: "Fecha", key: "fecha", width: 80 },
+              { label: "Hora", key: "hora", width: 60 },
+              { label: "Inscripción", key: "inscripcion", width: 70, align: "center" },
+              { label: "Cédula", key: "cedula", width: 90 },
+              { label: "Cliente", key: "nombre_completo" },
+            ]}
+            data={result.data as unknown as Record<string, unknown>[]}
+            getCell={(row: Record<string, unknown>, key: string) => {
+              if (key === "fecha") return formatDate(row[key] as string);
+              return String(row[key] ?? "—");
+            }}
+            estadisticas={estadisticas}
+          />;
+          break;
+        }
+
         default:
           error("Reporte no implementado", `El reporte ${reporteSeleccionado.id} no está disponible.`);
           setGenerando(false);
@@ -484,39 +543,50 @@ export function ReportesModule() {
   if (estado === "lista") {
     const categorias = [...new Set(REPORTES.map(r => r.categoria))];
     return (
-      <div className="p-6 flex flex-col gap-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">Reportes</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Seleccione el reporte que desea generar en PDF</p>
-        </div>
+      <div className="h-full overflow-y-auto">
+      <div className="p-6 flex flex-col gap-8 min-h-full">
+        <PageHeader 
+          title="Centro de Reportes" 
+          description="Genera documentos PDF y exporta datos a Excel. Selecciona una categoría a continuación para comenzar."
+          icon={FileText}
+        />
 
-        {categorias.map((cat) => (
-          <div key={cat}>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">{cat}</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {REPORTES.filter(r => r.categoria === cat).map((r) => {
-                const Icon = r.icono;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => seleccionarReporte(r)}
-                    className="text-left p-4 rounded-xl border bg-white hover:border-blue-300 hover:bg-blue-50 transition-all group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
-                        <Icon className="w-4 h-4 text-blue-600" />
+        <div className="space-y-10">
+          {categorias.map((cat) => (
+            <div key={cat} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+                {cat}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {REPORTES.filter(r => r.categoria === cat).map((r) => {
+                  const Icon = r.icono;
+                  const theme = COLOR_THEMES[r.colorTheme] || COLOR_THEMES.blue;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => seleccionarReporte(r)}
+                      className="group relative flex flex-col text-left p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden w-full min-w-0"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                      
+                      <div className="relative z-10 flex items-start gap-3 sm:gap-4 w-full min-w-0">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border shadow-sm ${theme.bg}`}>
+                          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${theme.text}`} />
+                        </div>
+                        <div className="min-w-0 pt-0.5 sm:pt-1 flex-1">
+                          <p className="font-bold text-sm text-slate-800 mb-0.5 sm:mb-1 group-hover:text-blue-700 transition-colors truncate">{r.titulo}</p>
+                          <p className="text-xs text-slate-500 leading-snug sm:leading-relaxed line-clamp-2">{r.descripcion}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm text-slate-800 leading-tight">{r.titulo}</p>
-                        <p className="text-xs text-slate-400 mt-0.5 leading-tight">{r.descripcion}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
       </div>
     );
   }
@@ -526,9 +596,10 @@ export function ReportesModule() {
     const r = reporteSeleccionado;
     const Icon = r.icono;
     return (
-      <div className="p-6 max-w-lg mx-auto">
+      <div className="h-full overflow-y-auto">
+      <div className="p-6 max-w-5xl mx-auto min-h-full">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => setEstado("lista")} className="h-9 w-9">
+          <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={() => setEstado("lista")} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -580,7 +651,7 @@ export function ReportesModule() {
 
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="outline" onClick={() => setEstado("lista")}><ArrowLeft className="w-4 h-4 mr-1.5" />Volver</Button>
-          
+
           {["listado-clientes", "inventario", "cuentas-por-pagar"].includes(r.id) ? (
             <Button onClick={descargarExcel} disabled={generando} className="min-w-[140px] bg-green-600 hover:bg-green-700">
               {generando
@@ -605,11 +676,34 @@ export function ReportesModule() {
           )}
         </div>
       </div>
+      </div>
     );
   }
 
-// ---- VISTA PREVIEW PDF ----
-function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElement; titulo: string; reporteId: string; onVolver: () => void }) {
+  // ---- VISTA PREVIEW ----
+  if (estado === "preview" && docElement) {
+    return (
+      <PdfPreview
+        doc={docElement}
+        titulo={reporteSeleccionado?.titulo ?? "Reporte"}
+        reporteId={reporteSeleccionado?.id ?? "reporte"}
+        onVolver={() => setEstado("configurar")}
+      />
+    );
+  }
+
+  return <PageLoading text="Cargando..." />;
+}
+
+// =============================================
+// COMPONENTE PDF PREVIEW — fuera de ReportesModule
+// =============================================
+function PdfPreview({ doc, titulo, reporteId, onVolver }: {
+  doc: React.ReactElement;
+  titulo: string;
+  reporteId: string;
+  onVolver: () => void;
+}) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [instance] = usePDF({ document: doc as any });
   const [descargando, setDescargando] = useState(false);
@@ -621,7 +715,6 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
       const filename = `${reporteId}_${today()}.pdf`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
-      
       if (isTauri) {
         const { save } = await import("@tauri-apps/plugin-dialog");
         const { writeFile } = await import("@tauri-apps/plugin-fs");
@@ -656,7 +749,7 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white flex-shrink-0 sagim-no-print">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onVolver}>
@@ -665,15 +758,14 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
           <span className="text-sm font-medium text-slate-700">{titulo}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" disabled={instance.loading || !instance.url || descargando}
+          <Button size="sm" variant="outline"
+            disabled={instance.loading || !instance.url || descargando}
             onClick={handleDescargar}
           >
             <Download className="w-3.5 h-3.5 mr-1.5" />
             {instance.loading || descargando ? "Preparando..." : "Descargar PDF"}
           </Button>
-          <Button size="sm"
-            onClick={handleImprimir}
-          >
+          <Button size="sm" onClick={handleImprimir}>
             <Printer className="w-3.5 h-3.5 mr-1.5" />
             Imprimir
           </Button>
@@ -687,19 +779,4 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
       </div>
     </div>
   );
-}
-
-  // ---- VISTA PREVIEW (en el componente principal) ----
-  if (estado === "preview" && docElement) {
-    return (
-      <PdfPreview
-        doc={docElement}
-        titulo={reporteSeleccionado?.titulo ?? "Reporte"}
-        reporteId={reporteSeleccionado?.id ?? "reporte"}
-        onVolver={() => setEstado("configurar")}
-      />
-    );
-  }
-
-  return <PageLoading text="Cargando..." />;
 }

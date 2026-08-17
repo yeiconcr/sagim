@@ -167,10 +167,11 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="h-full overflow-y-auto">
+    <div className="p-6 max-w-5xl mx-auto min-h-full">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={onCancelar} className="h-9 w-9">
+        <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={onCancelar} className="h-9 w-9">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -414,6 +415,7 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
           </div>
         </div>
       </form>
+    </div>
     </div>
   );
 }

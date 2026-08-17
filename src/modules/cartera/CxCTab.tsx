@@ -13,13 +13,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormField } from "@/components/shared/FormField";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
+import { InputDialog } from "@/components/shared/InputDialog";
 import { useToast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import { getCtasPorCobrar, getSaldoCliente, registrarMovCtaCobrar, getCuotasByCliente, pagarCuota } from "@/db/queries/caja";
 import { getDb } from "@/db/database";
-import { formatDate, formatCurrency, today } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 type TipoMov = "AB" | "NC" | "ND";
 
@@ -69,6 +69,7 @@ export function CxCTab() {
   const [guardando, setGuardando] = useState(false);
   const [confirmPagar, setConfirmPagar] = useState<Cuota | null>(null);
   const [valorPago, setValorPago] = useState("");
+  const [pagando, setPagando] = useState(false);
   const { success, error } = useToast();
   const { usuario } = useAuthStore();
 
@@ -115,18 +116,21 @@ export function CxCTab() {
     }
   };
 
-  const handlePagarCuota = async () => {
+  const handlePagarCuota = async (valorStr: string) => {
     if (!confirmPagar) return;
-    const val = Number(valorPago);
+    const val = Number(valorStr);
     if (isNaN(val) || val <= 0) { error("Valor inválido", "El valor de pago debe ser mayor a cero."); return; }
+    setPagando(true);
     try {
       await pagarCuota(confirmPagar.id, val, usuario?.nombre ?? "sistema");
       success("Cuota pagada");
+      setConfirmPagar(null);
+      setValorPago("");
       await buscarCliente();
     } catch (err) {
       error("Error", String(err));
     } finally {
-      setConfirmPagar(null); setValorPago("");
+      setPagando(false);
     }
   };
 
@@ -137,14 +141,14 @@ export function CxCTab() {
       accessorKey: "id_tipomo", header: "Tipo", size: 110,
       cell: ({ getValue }) => <span className={cn("text-xs font-semibold", TIPO_COLORS[getValue<string>()] ?? "text-slate-600")}>{TIPO_LABELS[getValue<string>()] ?? getValue<string>()}</span>,
     },
-    { accessorKey: "concemo", header: "Concepto", cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "concemo", header: "Concepto", size: 180, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
     { accessorKey: "importe", header: "Cargo", size: 110, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums", v > 0 && "text-red-600 font-medium")}>{v > 0 ? formatCurrency(v) : "—"}</span>; } },
     { accessorKey: "pago_clien", header: "Abono", size: 110, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums", v > 0 && "text-green-600 font-medium")}>{v > 0 ? formatCurrency(v) : "—"}</span>; } },
-    { accessorKey: "saldo_clien", header: "Saldo", size: 120, cell: ({ getValue }) => <span className="text-sm font-bold tabular-nums">{formatCurrency(getValue<number>())}</span> },
+    { accessorKey: "saldo_clien", header: "Saldo", size: 120, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
   ];
 
   const colsCuotas: ColumnDef<Cuota>[] = [
-    { accessorKey: "nro_cuota", header: "Cuota", size: 70, cell: ({ getValue }) => <span className="font-bold text-sm">{getValue<number>()}</span> },
+    { accessorKey: "nro_cuota", header: "Cuota", size: 70, cell: ({ getValue }) => <span className="text-sm">{getValue<number>()}</span> },
     { accessorKey: "num_doc", header: "Documento", size: 110, cell: ({ getValue }) => <span className="font-mono text-xs">{getValue<string>() || "—"}</span> },
     { accessorKey: "vencim", header: "Vencimiento", size: 110, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
     { accessorKey: "importe_total", header: "Valor cuota", size: 110, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
@@ -168,7 +172,7 @@ export function CxCTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 min-h-fit">
       {/* Buscador */}
       <div className="flex gap-2 items-end">
         <FormField label="Cédula del cliente" htmlFor="cxc-ced" className="flex-1 max-w-xs">
@@ -227,16 +231,16 @@ export function CxCTab() {
       {loading ? <PageLoading text="Cargando cartera..." /> : nombreCliente ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
           {/* Movimientos CxC */}
-          <div className="flex flex-col gap-2">
-            <h3 className="font-semibold text-slate-700 text-sm">Movimientos de cartera</h3>
-            <div style={{ height: "300px" }}>
+          <div className="flex flex-col gap-2 min-h-0">
+            <h3 className="font-semibold text-slate-700 text-sm flex-shrink-0">Movimientos de cartera</h3>
+            <div className="flex-1 min-h-0">
               <DataTable columns={colsMov} data={movimientos} showSearch={false} emptyMessage="Sin movimientos." pageSize={10} />
             </div>
           </div>
           {/* Cuotas */}
-          <div className="flex flex-col gap-2">
-            <h3 className="font-semibold text-slate-700 text-sm">Cuotas pendientes</h3>
-            <div style={{ height: "300px" }}>
+          <div className="flex flex-col gap-2 min-h-0">
+            <h3 className="font-semibold text-slate-700 text-sm flex-shrink-0">Cuotas pendientes</h3>
+            <div className="flex-1 min-h-0">
               <DataTable columns={colsCuotas} data={cuotas} showSearch={false} emptyMessage="Sin cuotas pendientes." pageSize={10} />
             </div>
           </div>
@@ -248,23 +252,19 @@ export function CxCTab() {
       )}
 
       {/* Dialog pagar cuota */}
-      {confirmPagar && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <Card className="w-full max-w-sm">
-            <CardContent className="p-6 space-y-4">
-              <h3 className="font-bold text-slate-800">Pagar Cuota N° {confirmPagar.nro_cuota}</h3>
-              <p className="text-sm text-slate-500">Saldo pendiente: <strong>{formatCurrency(confirmPagar.importe_total - confirmPagar.pagado)}</strong></p>
-              <FormField label="Valor a pagar ($)">
-                <Input type="number" min="0" step="1000" value={valorPago} onChange={(e) => setValorPago(e.target.value)} autoFocus />
-              </FormField>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setConfirmPagar(null); setValorPago(""); }}>Cancelar</Button>
-                <Button size="sm" onClick={handlePagarCuota}>Registrar Pago</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <InputDialog
+        open={!!confirmPagar}
+        onOpenChange={(open) => { if (!open) { setConfirmPagar(null); setValorPago(""); } }}
+        title={`Pagar Cuota N° ${confirmPagar?.nro_cuota ?? ""}`}
+        description={confirmPagar ? `Saldo pendiente: ${formatCurrency(confirmPagar.importe_total - confirmPagar.pagado)}` : ""}
+        inputLabel="Valor a pagar ($)"
+        initialValue={valorPago}
+        min={0}
+        max={confirmPagar ? confirmPagar.importe_total - confirmPagar.pagado : undefined}
+        confirmLabel="Registrar Pago"
+        onConfirm={handlePagarCuota}
+        loading={pagando}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { PageLoading } from "@/components/shared/LoadingSpinner";
 import { useToast } from "@/store/toastStore";
 import type { Parametros } from "@/db/types";
 import { getParametros, updateParametros } from "@/db/queries/configuracion";
+import { hexToHsl } from "@/lib/utils";
 
 export function ParametrosTab() {
   const [params, setParams] = useState<Parametros | null>(null);
@@ -90,7 +91,7 @@ export function ParametrosTab() {
       if (updated) setParams(updated);
       
       // Aplicar color en tiempo real si es posible
-      document.documentElement.style.setProperty("--primary", colorPrimario);
+      document.documentElement.style.setProperty("--primary", hexToHsl(colorPrimario));
     } catch (err) {
       error("Error", String(err));
     } finally {
@@ -120,7 +121,8 @@ export function ParametrosTab() {
   if (loading) return <PageLoading text="Cargando parámetros..." />;
 
   return (
-    <div className="max-w-4xl space-y-6 pb-20">
+    <div className="overflow-y-auto flex-1 min-h-0">
+    <div className="max-w-4xl space-y-6 pb-6">
       <div className="flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm sticky top-0 z-10">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Configuración General</h2>
@@ -315,6 +317,7 @@ export function ParametrosTab() {
           </Card>
         )}
       </div>
+    </div>
     </div>
   );
 }

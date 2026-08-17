@@ -2,50 +2,66 @@ import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
+import { getDetFacturaTiendaPorNro } from "@/db/queries/ventas";
 import { getParametros } from "@/db/queries/configuracion";
 import { useAuthStore } from "@/store/authStore";
-import type { MovCaja } from "@/db/types";
-import { generateHtmlCajaReceipt } from "@/lib/templates/cajaReceipt";
+import type { FactuTienda } from "@/db/types";
+import { generateHtmlTiendaReceipt } from "@/lib/templates/tiendaReceipt";
 import { printHtmlReceipt } from "@/lib/printer";
 
 interface Props {
-  movimiento: MovCaja | null;
+  factura: FactuTienda | null;
   onClose: () => void;
 }
 
-export function ImprimirReciboCaja({ movimiento, onClose }: Props) {
+export function ImprimirFacturaTienda({ factura, onClose }: Props) {
   const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<any[]>([]);
   const [params, setParams] = useState<any>(null);
   const { usuario } = useAuthStore();
 
   useEffect(() => {
-    if (!movimiento) return;
+    if (!factura) return;
     setLoading(true);
-    getParametros()
-      .then((conf) => setParams(conf))
+    Promise.all([
+      getDetFacturaTiendaPorNro(factura.nro_docu),
+      getParametros()
+    ])
+      .then(([detalles, conf]) => {
+        setItems(detalles);
+        setParams(conf);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [movimiento]);
+  }, [factura]);
 
   const htmlContent = useMemo(() => {
-    if (!movimiento || !params) return "";
-    return generateHtmlCajaReceipt({
+    if (!factura || !params) return "";
+    return generateHtmlTiendaReceipt({
       gimnasio: params.nombre_gimnasio ?? "SAGIM",
       nit: params.nit,
       direccion: params.direccion,
       telefono: params.telefono,
       textoResolucion: params.texto_resolucion,
       mensajeRecibo: params.mensaje_recibo,
-      fecha: movimiento.fecha,
-      referencia: movimiento.referencia || "MANUAL",
-      cedula: movimiento.cedula || "",
-      nombreCliente: movimiento.nombre_cliente,
-      concepto: movimiento.concepto || "",
-      natural: movimiento.natural,
-      valor: movimiento.valor,
-      generadoPor: usuario?.nombre
+      nroDocu: factura.nro_docu,
+      fecha: factura.fecha,
+      hora: null, // Si factura tienda no tiene hora
+      cliente: factura.nombre_cliente ?? "",
+      cedula: factura.cedula ?? "",
+      items: items.map(i => ({
+        detalle: i.detalle,
+        cantidad: i.cantidad,
+        punitario: i.punitario,
+        total: i.total
+      })),
+      subtotal: factura.subtotal ?? 0,
+      iva: factura.iva ?? 0,
+      total: factura.total ?? 0,
+      generadoPor: usuario?.nombre,
+      anulado: factura.estado === "X"
     });
-  }, [movimiento, params, usuario]);
+  }, [factura, params, items, usuario]);
 
   const handlePrint = () => {
     if (htmlContent) {
@@ -54,10 +70,10 @@ export function ImprimirReciboCaja({ movimiento, onClose }: Props) {
   };
 
   return (
-    <Dialog open={!!movimiento} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!factura} onOpenChange={(o) => !o && onClose()}>
       <DialogContent hideClose className="max-w-md max-h-[90vh] flex flex-col p-4">
         <DialogHeader className="flex flex-row justify-between items-center pb-2">
-          <DialogTitle>Comprobante de Caja</DialogTitle>
+          <DialogTitle>Factura N° {String(factura?.nro_docu).padStart(6, "0")}</DialogTitle>
           <div className="flex items-center gap-2">
             <Button onClick={handlePrint} disabled={!htmlContent} variant="default" size="sm">
               <Printer className="w-4 h-4 mr-2" />

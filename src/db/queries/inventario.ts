@@ -161,3 +161,15 @@ export async function createKardexSalida(
     [codigoArt, fecha, detalle, cantidad, punitario, cantidad * punitario]
   );
 }
+
+export async function getSiguienteCodigoArticulo(): Promise<string> {
+  const rows = await dbSelect("SELECT codigo FROM inventario");
+  let maxCode = 1000;
+  for (const row of rows as any[]) {
+    const num = parseInt(row.codigo, 10);
+    if (!isNaN(num) && num > maxCode) {
+      maxCode = num;
+    }
+  }
+  return String(maxCode + 1);
+}

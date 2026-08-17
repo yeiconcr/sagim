@@ -30,6 +30,7 @@ export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [nombreGimnasio, setNombreGimnasio] = useState("SAGIM");
+  const [logoPath, setLogoPath] = useState("");
   const [appVersion, setAppVersion] = useState("1.0.0");
   const [intentosFallidos, setIntentosFallidos] = useState(0);
   const { login } = useAuthStore();
@@ -48,11 +49,12 @@ export function LoginScreen() {
       // Load gym name
       try {
         const db = await getDb();
-        const rows = await db.select<Array<{ nombre_gimnasio: string }>>(
-          "SELECT nombre_gimnasio FROM parametros LIMIT 1"
+        const rows = await db.select<Array<{ nombre_gimnasio: string; logo_path: string | null }>>(
+          "SELECT nombre_gimnasio, logo_path FROM parametros LIMIT 1"
         );
-        if (rows.length > 0 && rows[0].nombre_gimnasio) {
-          setNombreGimnasio(rows[0].nombre_gimnasio);
+        if (rows.length > 0) {
+          if (rows[0].nombre_gimnasio) setNombreGimnasio(rows[0].nombre_gimnasio);
+          if (rows[0].logo_path) setLogoPath(rows[0].logo_path);
         }
       } catch {
         // Silencioso — la BD puede no estar lista aún
@@ -138,8 +140,8 @@ export function LoginScreen() {
       <div className="relative z-10 flex w-full">
         {/* Left Panel: App Info (Hidden on small screens) */}
         <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 text-center animate-in fade-in duration-1000">
-          <div className="w-36 h-36 mx-auto mb-8 rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/50 border border-white/10 bg-slate-900">
-            <img src={sagimLogo} alt="SAGIM Logo" className="w-full h-full object-cover" />
+          <div className="w-36 h-36 mx-auto mb-8 rounded-3xl overflow-hidden shadow-2xl shadow-blue-900/50 border border-white/10 bg-slate-900 p-2">
+            <img src={logoPath || sagimLogo} alt="SAGIM Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-blue-400 mb-4 tracking-tight drop-shadow-2xl">
             SAGIM
@@ -154,8 +156,8 @@ export function LoginScreen() {
           <div className="w-full max-w-md animate-in slide-in-from-right-8 duration-700 fade-in">
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-8">
-              <div className="w-24 h-24 mx-auto mb-4 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-slate-900">
-                <img src={sagimLogo} alt="SAGIM Logo" className="w-full h-full object-cover" />
+              <div className="w-24 h-24 mx-auto mb-4 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-slate-900 p-2">
+                <img src={logoPath || sagimLogo} alt="SAGIM Logo" className="w-full h-full object-contain" />
               </div>
               <h1 className="text-4xl font-black text-white">SAGIM</h1>
               <p className="text-blue-200 text-sm font-medium">{nombreGimnasio}</p>

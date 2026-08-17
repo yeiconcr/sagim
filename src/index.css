@@ -134,4 +134,33 @@
   body.sagim-printing .sagim-no-print {
     display: none !important;
   }
+
+  /* Impresión Ticket POS Nativo */
+  @page {
+    margin: 0;
+  }
+  body.sagim-printing-pos {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.sagim-printing-pos #root {
+    display: none !important;
+  }
+  #sagim-pos-receipt-container {
+    display: none;
+  }
+  body.sagim-printing-pos #sagim-pos-receipt-container {
+    display: block !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    background: white;
+    color: black;
+    font-family: monospace;
+    font-size: 12px;
+  }
+  body.sagim-printing-pos #sagim-pos-receipt-container img {
+    max-width: 100%;
+  }
 }

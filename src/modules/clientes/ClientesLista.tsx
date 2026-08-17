@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Pencil, Trash2, CreditCard, UserCheck, UserX, Filter, Activity } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Filter, Activity, ToggleLeft, ToggleRight } from "lucide-react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PAGE_SIZE } from "@/lib/constants";
 import { useToast } from "@/store/toastStore";
 import { useAuthStore } from "@/store/authStore";
 import type { Cliente } from "@/db/types";
@@ -104,13 +105,9 @@ export function ClientesLista({ refetchKey, onNuevo, onEditar, onVerPagos, onVer
     {
       id: "nombre",
       header: "Nombre",
+      size: 280,
       accessorFn: (r) => `${r.nombres} ${r.apellidos}`,
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium text-sm leading-tight">{row.original.nombres}</p>
-          <p className="text-xs text-slate-500 leading-tight">{row.original.apellidos}</p>
-        </div>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.nombres} {row.original.apellidos}</span>,
     },
     {
       accessorKey: "celular",
@@ -152,50 +149,32 @@ export function ClientesLista({ refetchKey, onNuevo, onEditar, onVerPagos, onVer
     {
       id: "acciones",
       header: "",
-      size: 130,
+      size: 240,
       cell: ({ row }) => {
         const c = row.original;
         return (
-          <div className="flex items-center gap-1 justify-end">
-            <Button
-              variant="ghost" size="icon" className="h-7 w-7"
-              title="Ver Pagos"
-              onClick={(e) => { e.stopPropagation(); onVerPagos(c); }}
-            >
-              <CreditCard className="w-3.5 h-3.5 text-blue-500" />
-            </Button>
-            <Button
-              variant="ghost" size="icon" className="h-7 w-7"
-              title="Ver Medidas"
-              onClick={(e) => { e.stopPropagation(); onVerMedidas(c); }}
-            >
-              <Activity className="w-3.5 h-3.5 text-purple-500" />
-            </Button>
-            <Button
-              variant="ghost" size="icon" className="h-7 w-7"
-              title="Editar"
-              onClick={(e) => { e.stopPropagation(); onEditar(c); }}
-            >
-              <Pencil className="w-3.5 h-3.5 text-slate-500" />
-            </Button>
-            <Button
-              variant="ghost" size="icon" className="h-7 w-7"
-              title={c.estado === "A" ? "Inactivar" : "Activar"}
-              onClick={(e) => { e.stopPropagation(); setConfirmToggle(c); }}
-            >
-              {c.estado === "A"
-                ? <UserX className="w-3.5 h-3.5 text-orange-500" />
-                : <UserCheck className="w-3.5 h-3.5 text-green-500" />
-              }
-            </Button>
+          <div className="flex items-center gap-2 justify-end">
+            <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); onVerPagos(c); }}>
+              <CreditCard className="w-4 h-4 text-blue-500" />
+              <span className="text-[10px] text-slate-600">Pagos</span>
+            </button>
+            <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); onVerMedidas(c); }}>
+              <Activity className="w-4 h-4 text-purple-500" />
+              <span className="text-[10px] text-slate-600">Medidas</span>
+            </button>
+            <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); onEditar(c); }}>
+              <Pencil className="w-4 h-4 text-slate-500" />
+              <span className="text-[10px] text-slate-600">Editar</span>
+            </button>
+            <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); setConfirmToggle(c); }}>
+              {c.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+              <span className="text-[10px] text-slate-600">{c.estado === "A" ? "Inactivar" : "Activar"}</span>
+            </button>
             {isAdmin && (
-              <Button
-                variant="ghost" size="icon" className="h-7 w-7"
-                title="Eliminar"
-                onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
-              >
-                <Trash2 className="w-3.5 h-3.5 text-red-500" />
-              </Button>
+              <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}>
+                <Trash2 className="w-4 h-4 text-red-500" />
+                <span className="text-[10px] text-slate-600">Eliminar</span>
+              </button>
             )}
           </div>
         );
@@ -204,7 +183,7 @@ export function ClientesLista({ refetchKey, onNuevo, onEditar, onVerPagos, onVer
   ];
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader
         title="Clientes"
         description={`${totalActivos.toLocaleString("es-CO")} clientes activos`}
@@ -225,7 +204,7 @@ export function ClientesLista({ refetchKey, onNuevo, onEditar, onVerPagos, onVer
           searchPlaceholder="Buscar por nombre, cédula..."
           onRowClick={onEditar}
           emptyMessage="No se encontraron clientes."
-          pageSize={25}
+          pageSize={PAGE_SIZE.LIST}
           toolbar={
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-400" />

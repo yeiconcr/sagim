@@ -1,4 +1,4 @@
-import { dbSelect, dbSelectOne, dbTransaction } from "../useDb";
+import { dbSelect, dbSelectOne, dbTransaction, dbExecute } from "../useDb";
 import type { PagoIns, QueryParams, PaginatedResult } from "../types";
 import { today } from "@/lib/utils";
 
@@ -48,34 +48,38 @@ export async function registrarPagoInstructor(params: {
   usuario: string;
 }): Promise<number> {
   const fechaHoy = today();
+  const insResult = await dbSelect<{ nombres: string, apellidos: string, cedula: string }>(
+    `SELECT nombres, apellidos, cedula FROM instructores WHERE id = $1`,
+    [params.idInstructor]
+  );
+  const nombreIns = insResult.length > 0 ? `${insResult[0].nombres} ${insResult[0].apellidos}` : `Instructor #${params.idInstructor}`;
+  const cedulaIns = insResult.length > 0 ? insResult[0].cedula : null;
 
-  let lastId = 0;
-  await dbTransaction([
-    {
-      sql: `INSERT INTO pagos_ins (id_instructor, id_especialidad, fecha_pag, periodo_ini, periodo_fin, valor, observaciones)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      params: [
-        params.idInstructor, params.idEspecialidad, fechaHoy,
-        params.periodoIni, params.periodoFin, params.valor, params.observaciones,
-      ],
-    },
-    {
-      sql: `INSERT INTO mov_caja (referencia, fecha, natural, valor, val_egre, concepto, usuario)
-            VALUES ($1,$2,'E',$3,$4,$5,$6)`,
-      params: [
-        `PI-${params.idInstructor}-${fechaHoy}`, fechaHoy,
-        params.valor, params.valor,
-        `Pago Instructor - ${params.periodoIni} a ${params.periodoFin}`,
-        params.usuario,
-      ],
-    },
-  ]);
+  // Primero insertar el pago
+  await dbExecute(
+    `INSERT INTO pagos_ins (id_instructor, id_especialidad, fecha_pag, periodo_ini, periodo_fin, valor, observaciones)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+    [params.idInstructor, params.idEspecialidad, fechaHoy, params.periodoIni, params.periodoFin, params.valor, params.observaciones]
+  );
 
   // Obtener el ID del pago recién insertado
   const idRow = await dbSelectOne<{ id: number }>(
     `SELECT id FROM pagos_ins WHERE id_instructor=$1 ORDER BY id DESC LIMIT 1`,
     [params.idInstructor]
   );
-  lastId = idRow?.id ?? 0;
-  return lastId;
+  const pagoId = idRow?.id ?? 0;
+
+  // Insertar el movimiento de caja con el ID del pago como referencia
+  await dbExecute(
+    `INSERT INTO mov_caja (referencia, fecha, cedula, natural, valor, val_egre, concepto, usuario)
+     VALUES ($1,$2,$3,'E',$4,$5,$6,$7)`,
+    [
+      String(pagoId), fechaHoy, cedulaIns,
+      params.valor, params.valor,
+      `Pago a Instructor ${nombreIns} - ${params.periodoIni} a ${params.periodoFin}`,
+      params.usuario,
+    ]
+  );
+
+  return pagoId;
 }

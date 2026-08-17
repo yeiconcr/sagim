@@ -82,26 +82,33 @@ export function UsuariosTab() {
   };
 
   const columns: ColumnDef<UsuarioRow>[] = [
-    { accessorKey: "nombre", header: "Usuario", cell: ({ getValue }) => <span className="font-medium text-sm font-mono">{getValue<string>()}</span> },
-    { accessorKey: "cargo", header: "Cargo", cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+    { accessorKey: "nombre", header: "Usuario", size: 140, cell: ({ getValue }) => <span className="text-sm font-mono">{getValue<string>()}</span> },
+    { accessorKey: "cargo", header: "Cargo", size: 160, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
     { accessorKey: "nivel", header: "Nivel", size: 90, cell: ({ getValue }) => <Badge variant={getValue<number>() === 1 ? "default" : "secondary"} className="text-xs">{getValue<number>() === 1 ? "Admin" : "Operador"}</Badge> },
     { accessorKey: "estado", header: "Estado", size: 90, cell: ({ getValue }) => <Badge variant={getValue<string>() === "A" ? "success" : "secondary"} className="text-xs">{getValue<string>() === "A" ? "ACTIVO" : "INACTIVO"}</Badge> },
     {
-      id: "acciones", header: "", size: 130,
+      id: "acciones", header: "", size: 160,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEditar(row.original)}><Pencil className="w-3.5 h-3.5 text-slate-500" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cambiar contraseña" onClick={() => abrirPassword(row.original)}><Key className="w-3.5 h-3.5 text-blue-500" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggle(row.original)}>
-            {row.original.estado === "A" ? <ToggleRight className="w-3.5 h-3.5 text-green-500" /> : <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />}
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={() => abrirEditar(row.original)}>
+            <Pencil className="w-4 h-4 text-slate-500" />
+            <span className="text-[10px] text-slate-600">Editar</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={() => abrirPassword(row.original)}>
+            <Key className="w-4 h-4 text-blue-500" />
+            <span className="text-[10px] text-slate-600">Clave</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={() => handleToggle(row.original)}>
+            {row.original.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+            <span className="text-[10px] text-slate-600">{row.original.estado === "A" ? "Inactivar" : "Activar"}</span>
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-2xl flex-1 min-h-0">
       {modo && (
         <Card>
           <CardHeader className="pb-2">

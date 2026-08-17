@@ -140,10 +140,11 @@ export function NuevoReciboForm({ cedulaInicial, onGuardar, onCancelar }: Props)
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto flex flex-col gap-4">
+    <div className="h-full overflow-y-auto">
+    <div className="p-6 max-w-5xl mx-auto min-h-full flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onCancelar} className="h-9 w-9">
+        <Button variant="ghost" size="icon" title="Volver" onClick={onCancelar} className="h-9 w-9">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -335,6 +336,7 @@ export function NuevoReciboForm({ cedulaInicial, onGuardar, onCancelar }: Props)
           )}
         </Button>
       </div>
+    </div>
     </div>
   );
 }

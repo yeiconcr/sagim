@@ -230,32 +230,31 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
     {
       accessorKey: "fecha",
       header: "Fecha",
-      size: 100,
+      size: 120,
       cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span>,
     },
     ...CAMPOS_MEDIDA.map(({ key, label }) => ({
       accessorKey: key as string,
       header: label.split(" ")[0],
-      size: 80,
       cell: ({ getValue }: { getValue: () => unknown }) => {
         const v = getValue() as number | null;
-        return <span className="text-sm tabular-nums text-right block">{v != null && v > 0 ? v.toFixed(1) : "—"}</span>;
+        return <span className="text-sm tabular-nums">{v != null && v > 0 ? v.toFixed(1) : "—"}</span>;
       },
     })),
     {
       id: "acciones",
       header: "",
-      size: 80,
+      size: 100,
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end">
           <Button
-            variant="ghost" size="icon" className="h-7 w-7"
+            variant="ghost" size="icon" className="h-7 w-7" title="Editar" aria-label="Editar"
             onClick={(e) => { e.stopPropagation(); setMedidaEditar(row.original); setMostrarFormulario(true); }}
           >
             <Pencil className="w-3.5 h-3.5 text-slate-500" />
           </Button>
           <Button
-            variant="ghost" size="icon" className="h-7 w-7"
+            variant="ghost" size="icon" className="h-7 w-7" title="Eliminar" aria-label="Eliminar"
             onClick={(e) => { e.stopPropagation(); setConfirmDelete(row.original); }}
           >
             <Trash2 className="w-3.5 h-3.5 text-red-500" />
@@ -266,11 +265,12 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
   ];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="h-full overflow-y-auto">
+    <div className="p-6 max-w-7xl mx-auto min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onVolver} className="h-9 w-9">
+          <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={onVolver} className="h-9 w-9">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
@@ -293,7 +293,7 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
 
       {/* Formulario inline */}
       {mostrarFormulario && (
-        <div className="mb-6">
+        <div className="mb-6 max-w-4xl">
           <FormMedida
             inscripcion={cliente.inscripcion}
             medidaEditar={medidaEditar}
@@ -321,7 +321,7 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
           {/* HISTORIAL */}
           <TabsContent value="tabla">
             {medidas.length === 0 ? (
-              <Card>
+              <Card className="max-w-md">
                 <CardContent className="p-12 text-center text-slate-400">
                   <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No hay medidas registradas para este cliente.</p>
@@ -335,21 +335,19 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
                 </CardContent>
               </Card>
             ) : (
-              <div style={{ height: "400px" }}>
-                <DataTable
-                  columns={columns}
-                  data={[...medidas].reverse()} // más reciente primero
-                  showSearch={false}
-                  pageSize={10}
-                  emptyMessage="Sin medidas registradas."
-                />
-              </div>
+              <DataTable
+                columns={columns}
+                data={[...medidas].reverse()} // más reciente primero
+                showSearch={false}
+                pageSize={15}
+                emptyMessage="Sin medidas registradas."
+              />
             )}
           </TabsContent>
 
           {/* GRÁFICA */}
           <TabsContent value="grafica">
-            <Card>
+            <Card className="max-w-5xl">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
@@ -357,7 +355,7 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={320}>
+                <ResponsiveContainer width="100%" height={350}>
                   <LineChart data={datosGrafica} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis
@@ -407,6 +405,7 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
         variant="destructive"
         onConfirm={handleEliminar}
       />
+    </div>
     </div>
   );
 }

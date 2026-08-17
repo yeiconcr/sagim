@@ -8,7 +8,7 @@ interface ReceiptItem {
   total: number;
 }
 
-interface PosReceiptGymProps {
+interface PosReceiptTiendaProps {
   gimnasio: string;
   nit?: string | null;
   direccion?: string | null;
@@ -19,6 +19,8 @@ interface PosReceiptGymProps {
   cliente: string;
   cedula: string;
   items: ReceiptItem[];
+  subtotal: number;
+  iva: number;
   total: number;
   generadoPor?: string;
   anulado?: boolean;
@@ -26,18 +28,8 @@ interface PosReceiptGymProps {
   mensajeRecibo?: string | null;
 }
 
-export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
+export function generateHtmlTiendaReceipt(p: PosReceiptTiendaProps): string {
   const timeStr = p.hora ? new Date(p.hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : "";
-
-  const itemsHtml = p.items.map(item => `
-    <tr>
-      <td colspan="2" style="font-weight: bold; font-size: 11px;">${item.detalle}</td>
-    </tr>
-    <tr>
-      <td style="font-size: 10px;">${item.cantidad} x ${formatCurrency(item.punitario)}</td>
-      <td style="text-align: right; font-size: 10px;">${formatCurrency(item.total)}</td>
-    </tr>
-  `).join("");
 
   return `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.4; letter-spacing: -0.2px;">
@@ -52,12 +44,12 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
       <div style="border-bottom: 1.5px dashed #000; margin: 10px 0;"></div>
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-        <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">RECIBO DE CAJA</div>
+        <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">FACTURA DE VENTA</div>
         <div style="font-weight: 800; font-size: 14px; padding: 2px 6px; border: 1.5px solid #000; border-radius: 4px;"># ${String(p.nroDocu).padStart(6, "0")}</div>
       </div>
       <div style="font-size: 10px; color: #444; margin-bottom: 8px;">${formatDate(p.fecha)} ${timeStr}</div>
       
-      ${p.anulado ? `<div style="text-align: center; font-weight: 900; margin: 8px 0; font-size: 16px; border: 2px solid #000; padding: 4px; border-radius: 4px;">ANULADO</div>` : ''}
+      ${p.anulado ? `<div style="text-align: center; font-weight: 900; margin: 8px 0; font-size: 16px; border: 2px solid #000; padding: 4px; border-radius: 4px;">ANULADA</div>` : ''}
 
       <div style="background: #f4f4f4; border: 1.5px solid #000; border-radius: 6px; padding: 6px; margin-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;">
@@ -85,6 +77,15 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
 
       <div style="border-bottom: 1.5px dashed #000; margin: 10px 0;"></div>
       
+      <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11px;">
+        <span style="font-weight: 700;">Subtotal</span>
+        <span style="font-weight: 600;">${formatCurrency(p.subtotal)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px;">
+        <span style="font-weight: 700;">IVA</span>
+        <span style="font-weight: 600;">${formatCurrency(p.iva)}</span>
+      </div>
+
       <div style="background: #000; color: #fff; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <span style="font-weight: 800; font-size: 14px;">TOTAL</span>
         <span style="font-weight: 900; font-size: 16px;">${formatCurrency(p.total)}</span>
@@ -93,10 +94,10 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
       <div style="text-align: center; font-size: 9px; font-style: italic; color: #444; margin-bottom: 24px;">
         ${numeroALetras(p.total)}
       </div>
-      
+
       <div style="text-align: center; margin-top: 16px;">
         <div style="font-size: 9px; color: #555; margin-bottom: 6px;">Atendido por: <span style="font-weight: 600; color: #000;">${p.generadoPor || 'Sistema'}</span></div>
-        <div style="font-weight: 700; font-size: 12px; margin-bottom: 8px;">${p.mensajeRecibo || '¡Gracias por preferirnos!'}</div>
+        <div style="font-weight: 700; font-size: 12px; margin-bottom: 8px;">${p.mensajeRecibo || '¡Gracias por su compra!'}</div>
         <div style="font-size: 9px; font-weight: 800; letter-spacing: 1px; color: #888;">SAGIM SOFTWARE</div>
       </div>
     </div>

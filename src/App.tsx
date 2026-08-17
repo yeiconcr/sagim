@@ -6,6 +6,8 @@ import { AppShell } from "@/modules/auth/AppShell";
 import { SplashScreen } from "@/modules/auth/SplashScreen";
 import { initDatabase } from "@/db/database";
 
+import { hexToHsl } from "@/lib/utils";
+
 function App() {
   const { isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,7 @@ function App() {
         const { getParametros } = await import("@/db/queries/configuracion");
         const p = await getParametros();
         if (p?.color_primario) {
-          document.documentElement.style.setProperty("--primary", p.color_primario);
+          document.documentElement.style.setProperty("--primary", hexToHsl(p.color_primario));
         }
       } catch (err) {
         console.error("Error inicializando base de datos:", err);

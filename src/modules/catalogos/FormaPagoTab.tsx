@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormField } from "@/components/shared/FormField";
+import { PAGE_SIZE } from "@/lib/constants";
 import { useToast } from "@/store/toastStore";
 import type { FormaPago } from "@/db/types";
 import { getFormasPago, createFormaPago, updateFormaPago, toggleFormaPagoEstado } from "@/db/queries/catalogos";
@@ -65,7 +66,7 @@ export function FormaPagoTab() {
   };
 
   const columns: ColumnDef<FormaPago>[] = [
-    { accessorKey: "detalle", header: "Descripción", cell: ({ getValue }) => <span className="font-medium text-sm">{getValue<string>()}</span> },
+    { accessorKey: "detalle", header: "Descripción", size: 200, cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span> },
     {
       accessorKey: "plazo_dias", header: "Plazo (días)", size: 120,
       cell: ({ getValue }) => {
@@ -82,27 +83,32 @@ export function FormaPagoTab() {
       ),
     },
     {
-      id: "acciones", header: "", size: 80,
+      id: "acciones", header: "", size: 100,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
-            <Pencil className="w-3.5 h-3.5 text-slate-500" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
-            {row.original.estado === "A"
-              ? <ToggleRight className="w-3.5 h-3.5 text-green-500" />
-              : <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
-            }
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
+            <Pencil className="w-4 h-4 text-slate-500" />
+            <span className="text-[10px] text-slate-600">Editar</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
+            {row.original.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+            <span className="text-[10px] text-slate-600">{row.original.estado === "A" ? "Inactivar" : "Activar"}</span>
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col h-full gap-3">
+      <div className="flex justify-between items-center flex-shrink-0">
+        <p className="text-sm text-slate-500">{formas.length} formas de pago</p>
+        {!mostrarForm && (
+          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nueva Forma de Pago</Button>
+        )}
+      </div>
       {mostrarForm && (
-        <div className="flex items-end gap-3 p-4 bg-white rounded-lg border flex-wrap">
+        <div className="flex items-end gap-3 p-4 bg-white rounded-lg border flex-wrap flex-shrink-0">
           <FormField label="Descripción" error={errors.detalle?.message} htmlFor="fp-det" className="flex-1 min-w-[200px]">
             <Input id="fp-det" {...register("detalle")} placeholder="Ej: Efectivo, Tarjeta, Crédito 30 días" className={cn(errors.detalle && "border-destructive")} autoFocus />
           </FormField>
@@ -117,19 +123,9 @@ export function FormaPagoTab() {
           </div>
         </div>
       )}
-      <p className="text-xs text-slate-400">
-        💡 El <strong>Plazo</strong> indica días de crédito. 0 = pago de contado.
-      </p>
-
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{formas.length} formas de pago</p>
-        {!mostrarForm && (
-          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nueva Forma de Pago</Button>
-        )}
-      </div>
-
-      <div className="flex-1" style={{ minHeight: 0 }}>
-        <DataTable columns={columns} data={formas} searchPlaceholder="Buscar..." onRowClick={abrirEditar} emptyMessage="No hay formas de pago." pageSize={15} />
+      <p className="text-xs text-slate-400 flex-shrink-0">💡 El <strong>Plazo</strong> indica días de crédito. 0 = pago de contado.</p>
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DataTable columns={columns} data={formas} searchPlaceholder="Buscar..." onRowClick={abrirEditar} emptyMessage="No hay formas de pago." pageSize={PAGE_SIZE.CATALOG} />
       </div>
     </div>
   );

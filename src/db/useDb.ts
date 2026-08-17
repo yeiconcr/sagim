@@ -94,22 +94,18 @@ export async function dbExecute(
 }
 
 /**
- * Ejecuta múltiples queries en secuencia (simula transacción).
- * Si alguna falla, lanza el error (el caller debe hacer rollback manual si aplica).
+ * Ejecuta múltiples queries en secuencia.
+ * NOTA: tauri-plugin-sql usa un pool de conexiones en Rust.
+ * Ejecutar BEGIN TRANSACTION manual puede causar "database is locked"
+ * si el pool asigna una conexión distinta para el siguiente execute.
+ * Por lo tanto, ejecutamos secuencialmente con auto-commit.
  */
 export async function dbTransaction(
   operations: Array<{ sql: string; params?: unknown[] }>
 ): Promise<void> {
   const db = await getDb();
-  await db.execute("BEGIN TRANSACTION");
-  try {
-    for (const op of operations) {
-      await db.execute(op.sql, op.params ?? []);
-    }
-    await db.execute("COMMIT");
-  } catch (err) {
-    await db.execute("ROLLBACK");
-    throw err;
+  for (const op of operations) {
+    await db.execute(op.sql, op.params ?? []);
   }
 }
 

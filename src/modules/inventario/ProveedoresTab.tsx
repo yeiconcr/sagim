@@ -100,10 +100,10 @@ export function ProveedoresTab() {
       id: "acciones", header: "", size: 80,
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" aria-label="Editar" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
             <Pencil className="w-3.5 h-3.5 text-slate-500" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" title={row.original.estado === 'A' ? "Inactivar" : "Activar"} aria-label={row.original.estado === 'A' ? "Inactivar" : "Activar"} onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
             {row.original.estado === "A" ? <ToggleRight className="w-3.5 h-3.5 text-green-500" /> : <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />}
           </Button>
         </div>
@@ -112,9 +112,17 @@ export function ProveedoresTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col h-full gap-3">
+      {/* Barra fija */}
+      <div className="flex justify-between items-center flex-shrink-0">
+        <p className="text-sm text-slate-500">{proveedores.filter(p => p.estado === "A").length} proveedores activos</p>
+        {!mostrarForm && (
+          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nuevo Proveedor</Button>
+        )}
+      </div>
+
       {mostrarForm && (
-        <Card>
+        <Card className="flex-shrink-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-slate-600">
               {editando ? `Editar: ${editando.nombre}` : "Nuevo Proveedor"}
@@ -154,15 +162,9 @@ export function ProveedoresTab() {
         </Card>
       )}
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{proveedores.filter(p => p.estado === "A").length} proveedores activos</p>
-        {!mostrarForm && (
-          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nuevo Proveedor</Button>
-        )}
-      </div>
-
-      <div className="flex-1" style={{ minHeight: 0 }}>
-        <DataTable columns={columns} data={proveedores} searchPlaceholder="Buscar proveedores..." onRowClick={abrirEditar} emptyMessage="No hay proveedores." pageSize={15} />
+      {/* Tabla con scroll propio */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DataTable columns={columns} data={proveedores} searchPlaceholder="Buscar proveedores..." onRowClick={abrirEditar} emptyMessage="No hay proveedores." pageSize={500} />
       </div>
     </div>
   );

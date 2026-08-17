@@ -14,7 +14,7 @@ import { FormField } from "@/components/shared/FormField";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
 import { useToast } from "@/store/toastStore";
 import type { Inventario, Kardex, Proveedor } from "@/db/types";
-import { getInventario, createArticulo, updateArticulo, toggleArticuloEstado, getKardexByArticulo } from "@/db/queries/inventario";
+import { getInventario, createArticulo, updateArticulo, toggleArticuloEstado, getKardexByArticulo, getSiguienteCodigoArticulo } from "@/db/queries/inventario";
 import { getProveedores } from "@/db/queries/catalogos";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 
@@ -69,8 +69,9 @@ export function ArticulosTab() {
   const watchGanancia = watch("ganancia") || 0;
   const precioVentaCalculado = Number(watchPrecioCompra) * (1 + Number(watchGanancia) / 100);
 
-  const abrirNuevo = () => {
-    reset({ estado: "A", stock: 0, ganancia: 0, impuesto: 0, precio_compra: 0, unidad_medida: "UND" });
+  const abrirNuevo = async () => {
+    const nextCode = await getSiguienteCodigoArticulo();
+    reset({ codigo: nextCode, estado: "A", stock: 0, ganancia: 0, impuesto: 0, precio_compra: 0, unidad_medida: "UND" });
     setEditando(null);
     setMostrarForm(true);
   };
@@ -143,7 +144,7 @@ export function ArticulosTab() {
   // VISTA KARDEX
   if (vista === "kardex" && articuloKardex) {
     return (
-      <div className="flex flex-col gap-4 h-full">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => { setVista("lista"); setArticuloKardex(null); }}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />Volver
@@ -155,23 +156,21 @@ export function ArticulosTab() {
         </div>
 
         {loadingKardex ? <PageLoading text="Cargando kárdex..." /> : (
-          <div className="flex-1" style={{ minHeight: 0 }}>
-            <DataTable
-              columns={[
+          <DataTable
+            columns={[
                 { accessorKey: "fecha", header: "Fecha", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
-                { accessorKey: "detalle", header: "Detalle", cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
+                { accessorKey: "detalle", header: "Detalle", size: 180, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
                 { accessorKey: "cantidad_in", header: "Cant. Entrada", size: 110, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums text-right block", v > 0 && "text-green-600 font-medium")}>{v > 0 ? `+${v}` : "—"}</span>; } },
                 { accessorKey: "total_in", header: "Valor Entrada", size: 120, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums text-right block", v > 0 && "text-green-600")}>{v > 0 ? formatCurrency(v) : "—"}</span>; } },
                 { accessorKey: "cantidad_sa", header: "Cant. Salida", size: 110, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums text-right block", v > 0 && "text-red-500 font-medium")}>{v > 0 ? `-${v}` : "—"}</span>; } },
                 { accessorKey: "total_sa", header: "Valor Salida", size: 120, cell: ({ getValue }) => { const v = getValue<number>(); return <span className={cn("text-sm tabular-nums text-right block", v > 0 && "text-red-500")}>{v > 0 ? formatCurrency(v) : "—"}</span>; } },
-                { accessorKey: "saldo", header: "Saldo", size: 90, cell: ({ getValue }) => <span className="text-sm font-semibold tabular-nums text-right block">{getValue<number>() ?? "—"}</span> },
+                { accessorKey: "saldo", header: "Saldo", size: 90, cell: ({ getValue }) => <span className="text-sm tabular-nums text-right block">{getValue<number>() ?? "—"}</span> },
               ] satisfies ColumnDef<Kardex>[]}
-              data={kardex}
-              showSearch={false}
-              emptyMessage="Sin movimientos en el kárdex."
-              pageSize={20}
-            />
-          </div>
+            data={kardex}
+            showSearch={false}
+            emptyMessage="Sin movimientos en el kárdex."
+            pageSize={500}
+          />
         )}
       </div>
     );
@@ -180,55 +179,49 @@ export function ArticulosTab() {
   // VISTA LISTA
   const columns: ColumnDef<Inventario>[] = [
     { accessorKey: "codigo", header: "Código", size: 90, cell: ({ getValue }) => <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{getValue<string>()}</span> },
+    { accessorKey: "nombre", header: "Artículo", size: 220, cell: ({ row }) => <span className="text-sm">{row.original.nombre}</span> },
+    { accessorKey: "stock", header: "Stock", size: 70, cell: ({ row }) => <span className={cn("text-sm tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock}</span> },
+    { accessorKey: "unidad_medida", header: "Und.", size: 60, cell: ({ getValue }) => <Badge variant="outline" className="text-[10px] uppercase font-semibold text-slate-500 bg-slate-50">{getValue<string>()}</Badge> },
+    { accessorKey: "precio_compra", header: "P. Compra", size: 100, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
+    { id: "precio_venta", header: "P. Venta", size: 100, cell: ({ row }) => <span className="text-sm tabular-nums text-green-700">{formatCurrency(row.original.precio_compra * (1 + row.original.ganancia / 100))}</span> },
+    { accessorKey: "estado", header: "Estado", size: 80, cell: ({ getValue }) => <Badge variant={getValue<string>() === "A" ? "success" : "secondary"} className="text-xs">{getValue<string>() === "A" ? "ACTIVO" : "INACTIVO"}</Badge> },
     {
-      accessorKey: "nombre", header: "Artículo",
+      id: "acciones", header: "", size: 160,
       cell: ({ row }) => (
-        <div>
-          <p className="font-medium text-sm">{row.original.nombre}</p>
-          {row.original.descripcion && <p className="text-xs text-slate-400 truncate max-w-[200px]">{row.original.descripcion}</p>}
-        </div>
-      ),
-    },
-    { accessorKey: "stock", header: "Stock", size: 80, cell: ({ row }) => <span className={cn("text-base font-bold tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock}</span> },
-    { accessorKey: "unidad_medida", header: "Und.", size: 70, cell: ({ getValue }) => <Badge variant="outline" className="text-[10px] uppercase font-semibold text-slate-500 bg-slate-50">{getValue<string>()}</Badge> },
-    { accessorKey: "precio_compra", header: "P. Compra", size: 110, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
-    {
-      id: "precio_venta", header: "P. Venta", size: 110,
-      cell: ({ row }) => {
-        const pv = row.original.precio_compra * (1 + row.original.ganancia / 100);
-        return <span className="text-sm font-semibold tabular-nums text-green-700">{formatCurrency(pv)}</span>;
-      },
-    },
-    {
-      accessorKey: "estado", header: "Estado", size: 90,
-      cell: ({ getValue }) => (
-        <Badge variant={getValue<string>() === "A" ? "success" : "secondary"} className="text-xs">
-          {getValue<string>() === "A" ? "ACTIVO" : "INACTIVO"}
-        </Badge>
-      ),
-    },
-    {
-      id: "acciones", header: "", size: 110,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver Kárdex" onClick={(e) => { e.stopPropagation(); verKardex(row.original); }}>
-            <BarChart2 className="w-3.5 h-3.5 text-blue-500" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
-            <Pencil className="w-3.5 h-3.5 text-slate-500" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
-            {row.original.estado === "A" ? <ToggleRight className="w-3.5 h-3.5 text-green-500" /> : <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />}
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); verKardex(row.original); }}>
+            <BarChart2 className="w-4 h-4 text-blue-500" />
+            <span className="text-[10px] text-slate-600">Kárdex</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
+            <Pencil className="w-4 h-4 text-slate-500" />
+            <span className="text-[10px] text-slate-600">Editar</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
+            {row.original.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+            <span className="text-[10px] text-slate-600">{row.original.estado === "A" ? "Inactivar" : "Activar"}</span>
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col h-full gap-3">
+      {/* Barra fija: conteo + botón */}
+      <div className="flex justify-between items-center flex-shrink-0">
+        <p className="text-sm text-slate-500">
+          {articulos.filter(a => a.estado === "A").length} artículos activos ·{" "}
+          {articulos.filter(a => a.stock <= 0 && a.estado === "A").length} sin stock
+        </p>
+        {!mostrarForm && (
+          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nuevo Artículo</Button>
+        )}
+      </div>
+
+      {/* Formulario inline (solo visible cuando se abre) */}
       {mostrarForm && (
-        <Card>
+        <Card className="flex-shrink-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-slate-600">
               {editando ? `Editar: ${editando.nombre}` : "Nuevo Artículo"}
@@ -313,21 +306,12 @@ export function ArticulosTab() {
         </Card>
       )}
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">
-          {articulos.filter(a => a.estado === "A").length} artículos activos ·{" "}
-          {articulos.filter(a => a.stock <= 0 && a.estado === "A").length} sin stock
-        </p>
-        {!mostrarForm && (
-          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nuevo Artículo</Button>
+      {/* Tabla con scroll propio */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {loading ? <PageLoading text="Cargando inventario..." /> : (
+          <DataTable columns={columns} data={articulos} searchPlaceholder="Buscar artículos..." onRowClick={abrirEditar} emptyMessage="No hay artículos en el inventario." pageSize={500} />
         )}
       </div>
-
-      {loading ? <PageLoading text="Cargando inventario..." /> : (
-        <div className="flex-1" style={{ minHeight: 0 }}>
-          <DataTable columns={columns} data={articulos} searchPlaceholder="Buscar artículos..." onRowClick={abrirEditar} emptyMessage="No hay artículos en el inventario." pageSize={20} />
-        </div>
-      )}
     </div>
   );
 }

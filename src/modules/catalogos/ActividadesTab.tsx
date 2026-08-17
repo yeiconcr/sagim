@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/shared/DataTable";
 import { FormField } from "@/components/shared/FormField";
+import { PAGE_SIZE } from "@/lib/constants";
 import { useToast } from "@/store/toastStore";
 import type { Actividad } from "@/db/types";
 import { getActividades, createActividad, updateActividad, toggleActividadEstado } from "@/db/queries/catalogos";
@@ -86,7 +87,7 @@ export function ActividadesTab() {
 
   const columns: ColumnDef<Actividad>[] = [
     { accessorKey: "codigo", header: "Código", size: 80, cell: ({ getValue }) => <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{getValue<string>()}</span> },
-    { accessorKey: "nombre", header: "Nombre", cell: ({ getValue }) => <span className="font-medium text-sm">{getValue<string>()}</span> },
+    { accessorKey: "nombre", header: "Nombre", size: 180, cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span> },
     { accessorKey: "tarifa", header: "Tarifa", size: 110, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
     { accessorKey: "factor", header: "Días", size: 70, cell: ({ getValue }) => <span className="text-sm text-center block">{getValue<number>()}</span> },
     {
@@ -106,27 +107,32 @@ export function ActividadesTab() {
       ),
     },
     {
-      id: "acciones", header: "", size: 80,
+      id: "acciones", header: "", size: 100,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
-            <Pencil className="w-3.5 h-3.5 text-slate-500" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
-            {row.original.estado === "A"
-              ? <ToggleRight className="w-3.5 h-3.5 text-green-500" />
-              : <ToggleLeft className="w-3.5 h-3.5 text-slate-400" />
-            }
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); abrirEditar(row.original); }}>
+            <Pencil className="w-4 h-4 text-slate-500" />
+            <span className="text-[10px] text-slate-600">Editar</span>
+          </button>
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); handleToggle(row.original); }}>
+            {row.original.estado === "A" ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+            <span className="text-[10px] text-slate-600">{row.original.estado === "A" ? "Inactivar" : "Activar"}</span>
+          </button>
         </div>
       ),
     },
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {mostrarForm && (
-        <Card>
+    <div className="flex flex-col h-full gap-3">
+      <div className="flex justify-between items-center flex-shrink-0">
+        <p className="text-sm text-slate-500">{actividades.filter(a => a.estado === "A").length} actividades activas de {actividades.length}</p>
+        {!mostrarForm && (
+          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nueva Actividad</Button>
+        )}
+      </div>
+
+      {mostrarForm && <Card className="flex-shrink-0">{/* form */}
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-slate-600">
               {editando ? `Editar: ${editando.nombre}` : "Nueva Actividad"}
@@ -174,7 +180,7 @@ export function ActividadesTab() {
                 </FormField>
               </div>
               <p className="text-xs text-slate-400 mb-3">
-                💡 El <strong>Factor</strong> determina cuántos días dura la membresía al pagar esta actividad. Ej: 30 = mensual, 15 = quincenal.
+                💡 El <strong>Factor</strong> determina cuántos días dura la membresía. Ej: 30 = mensual, 15 = quincenal.
               </p>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={cerrar}><X className="w-3.5 h-3.5 mr-1" />Cancelar</Button>
@@ -182,18 +188,10 @@ export function ActividadesTab() {
               </div>
             </form>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{actividades.filter(a => a.estado === "A").length} actividades activas de {actividades.length}</p>
-        {!mostrarForm && (
-          <Button size="sm" onClick={abrirNuevo}><Plus className="w-4 h-4 mr-1.5" />Nueva Actividad</Button>
-        )}
-      </div>
-
-      <div className="flex-1" style={{ minHeight: 0 }}>
-        <DataTable columns={columns} data={actividades} searchPlaceholder="Buscar actividades..." onRowClick={abrirEditar} emptyMessage="No hay actividades." pageSize={15} />
+      <div className="flex-1 min-h-0 flex flex-col">
+        <DataTable columns={columns} data={actividades} searchPlaceholder="Buscar actividades..." onRowClick={abrirEditar} emptyMessage="No hay actividades." pageSize={PAGE_SIZE.CATALOG} />
       </div>
     </div>
   );

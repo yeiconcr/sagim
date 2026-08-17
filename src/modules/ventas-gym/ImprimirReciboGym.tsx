@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, X } from "lucide-react";
 import { getDetReciboPorNro } from "@/db/queries/ventas";
 import { getParametros } from "@/db/queries/configuracion";
 import { useAuthStore } from "@/store/authStore";
@@ -69,19 +69,24 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
 
   return (
     <Dialog open={!!recibo} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md h-[90vh] flex flex-col p-4">
-        <DialogHeader className="flex flex-row justify-between items-center">
+      <DialogContent hideClose className="max-w-md max-h-[90vh] flex flex-col p-4">
+        <DialogHeader className="flex flex-row justify-between items-center pb-2">
           <DialogTitle>Recibo N° {String(recibo?.nro_docu).padStart(6, "0")}</DialogTitle>
-          <Button onClick={handlePrint} disabled={!htmlContent} variant="default" size="sm">
-            <Printer className="w-4 h-4 mr-2" />
-            Imprimir Ticket POS
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handlePrint} disabled={!htmlContent} variant="default" size="sm">
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
+            <Button onClick={onClose} variant="outline" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-800 shrink-0">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
         
         {loading || !htmlContent ? (
           <div className="flex-1 flex items-center justify-center text-sm text-slate-500">Generando tirilla...</div>
         ) : (
-          <div className="flex-1 bg-slate-100 rounded-md overflow-y-auto mt-2 p-4 flex justify-center">
+          <div className="flex-1 bg-slate-100 rounded-md overflow-y-auto mt-2 p-4 flex justify-center items-start">
             <div 
               className="bg-white shadow-sm p-4 w-[80mm] text-black font-mono text-xs overflow-hidden relative border border-slate-200"
               dangerouslySetInnerHTML={{ __html: htmlContent }}

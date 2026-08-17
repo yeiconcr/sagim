@@ -13,6 +13,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
+import { useIsMounted } from "@/hooks/useAsyncEffect";
 import { useToast } from "@/store/toastStore";
 import { useAppStore } from "@/store/appStore";
 import {
@@ -46,11 +47,13 @@ export function ProcesosModule() {
   const [diasInactivar, setDiasInactivar] = useState(90);
   const { success, error } = useToast();
   const { setModulo, setClientePrecargado } = useAppStore();
+  const isMounted = useIsMounted();
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
       const params = await getParametros();
+      if (!isMounted()) return;
       const alerta = params?.dias_alerta_vencimiento ?? 5;
       const inact = params?.dias_inactivar ?? 90;
       setDiasAlerta(alerta); setDiasInactivar(inact);
@@ -59,15 +62,16 @@ export function ProcesosModule() {
         getClientesCumpleanos(),
         getClientesSinActividad(inact),
       ]);
+      if (!isMounted()) return;
       setVencimientos(vencs as ClienteVenc[]);
       setCumpleanos(cumps as ClienteCumple[]);
       setSinActividad(sinAct as ClienteInactivo[]);
     } catch (err) {
-      error("Error", String(err));
+      if (isMounted()) error("Error", String(err));
     } finally {
-      setLoading(false);
+      if (isMounted()) setLoading(false);
     }
-  }, [error]);
+  }, [error, isMounted]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -95,67 +99,39 @@ export function ProcesosModule() {
   };
 
   const colsVenc: ColumnDef<ClienteVenc>[] = [
-    { id: "nombre", header: "Cliente", cell: ({ row }) => <div><p className="font-medium text-sm">{row.original.nombres} {row.original.apellidos}</p><p className="text-xs text-slate-400">{row.original.cedula} · #{row.original.inscripcion}</p></div> },
+    { id: "nombre", header: "Cliente", size: 280, cell: ({ row }) => <span className="text-sm">{row.original.nombres} {row.original.apellidos}</span> },
+    { accessorKey: "cedula", header: "Cédula", size: 100, cell: ({ row }) => <span className="text-xs text-slate-500">{row.original.cedula}</span> },
     { accessorKey: "celular", header: "Celular", size: 110, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
-    { accessorKey: "actividad", header: "Actividad", cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span> },
-    { accessorKey: "fecha_vencimiento", header: "Vencimiento", size: 110, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
+    { accessorKey: "actividad", header: "Actividad", size: 140, cell: ({ getValue }) => <span className="text-sm">{getValue<string>()}</span> },
+    { accessorKey: "fecha_vencimiento", header: "Vence", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
     {
-      accessorKey: "dias_restantes", header: "Días", size: 80,
+      accessorKey: "dias_restantes", header: "Días", size: 90,
       cell: ({ getValue }) => {
         const d = getValue<number>();
-        return (
-          <Badge
-            variant={d < 0 ? "destructive" : d === 0 ? "warning" : d <= 3 ? "warning" : "success"}
-            className="text-xs"
-          >
-            {d < 0 ? `Vencido ${Math.abs(d)}d` : d === 0 ? "Hoy" : `${d} días`}
-          </Badge>
-        );
+        return <Badge variant={d < 0 ? "destructive" : d <= 3 ? "warning" : "success"} className="text-xs">{d < 0 ? `Vencido ${Math.abs(d)}d` : d === 0 ? "Hoy" : `${d} días`}</Badge>;
       },
     },
-    {
-      id: "renovar", header: "", size: 90,
-      cell: ({ row }) => (
-        <Button size="sm" variant="outline" className="h-7 text-xs"
-          onClick={() => { setClientePrecargado(row.original.cedula); setModulo("ventas-gym"); }}
-        >
-          Renovar
-        </Button>
-      ),
-    },
+    { id: "renovar", header: "", size: 90, cell: ({ row }) => <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setClientePrecargado(row.original.cedula); setModulo("ventas-gym"); }}>Renovar</Button> },
   ];
 
   const colsCumple: ColumnDef<ClienteCumple>[] = [
-    { id: "nombre", header: "Cliente", cell: ({ row }) => <div><p className="font-medium text-sm">{row.original.nombres} {row.original.apellidos}</p><p className="text-xs text-slate-400">{row.original.cedula}</p></div> },
+    { id: "nombre", header: "Cliente", size: 280, cell: ({ row }) => <span className="text-sm">{row.original.nombres} {row.original.apellidos}</span> },
+    { accessorKey: "cedula", header: "Cédula", size: 100, cell: ({ row }) => <span className="text-xs text-slate-500">{row.original.cedula}</span> },
     { accessorKey: "celular", header: "Celular", size: 110, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() || "—"}</span> },
-    { accessorKey: "fecha_nacimiento", header: "Fecha nacimiento", size: 130, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
-    { accessorKey: "edad", header: "Edad", size: 70, cell: ({ getValue }) => <span className="text-lg font-black text-pink-600">{getValue<number>()} años</span> },
+    { accessorKey: "fecha_nacimiento", header: "Cumpleaños", size: 110, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
+    { accessorKey: "edad", header: "Edad", size: 80, cell: ({ getValue }) => <span className="text-lg font-black text-pink-600">{getValue<number>()} años</span> },
   ];
 
   const colsInactivos: ColumnDef<ClienteInactivo>[] = [
-    {
-      id: "sel", header: "", size: 40,
-      cell: ({ row }) => (
-        <Checkbox
-          checked={seleccionados.has(row.original.cedula)}
-          onCheckedChange={() => toggleSeleccion(row.original.cedula)}
-        />
-      ),
-    },
-    { id: "nombre", header: "Cliente", cell: ({ row }) => <div><p className="font-medium text-sm">{row.original.nombres} {row.original.apellidos}</p><p className="text-xs text-slate-400">{row.original.cedula}</p></div> },
-    { accessorKey: "ultimo_pago", header: "Último pago", size: 120, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() ? formatDate(getValue<string>()!) : "Sin pagos"}</span> },
-    {
-      accessorKey: "dias_sin_pago", header: "Días sin actividad", size: 140,
-      cell: ({ getValue }) => (
-        <span className={cn("font-semibold text-sm", getValue<number>() > diasInactivar ? "text-red-600" : "text-orange-500")}>
-          {getValue<number>()} días
-        </span>
-      ),
-    },
+    { id: "sel", header: "", size: 40, cell: ({ row }) => <Checkbox checked={seleccionados.has(row.original.cedula)} onCheckedChange={() => toggleSeleccion(row.original.cedula)} /> },
+    { id: "nombre", header: "Cliente", size: 280, cell: ({ row }) => <span className="text-sm">{row.original.nombres} {row.original.apellidos}</span> },
+    { accessorKey: "cedula", header: "Cédula", size: 100, cell: ({ row }) => <span className="text-xs text-slate-500">{row.original.cedula}</span> },
+    { accessorKey: "ultimo_pago", header: "Último pago", size: 110, cell: ({ getValue }) => <span className="text-sm">{getValue<string>() ? formatDate(getValue<string>()!) : "Sin pagos"}</span> },
+    { accessorKey: "dias_sin_pago", header: "Días sin actividad", size: 130, cell: ({ getValue }) => <span className={cn("text-sm", getValue<number>() > diasInactivar ? "text-red-600" : "text-orange-500")}>{getValue<number>()} días</span> },
   ];
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader
         title="Procesos"
         description="Vencimientos de membresías, cumpleaños del día e inactivación de clientes"
@@ -198,8 +174,8 @@ export function ProcesosModule() {
       </div>
 
       {loading ? <PageLoading text="Cargando procesos..." /> : (
-        <Tabs defaultValue="vencimientos" className="flex-1 flex flex-col">
-          <TabsList className="self-start">
+        <Tabs defaultValue="vencimientos" className="flex-1 flex flex-col min-h-0">
+          <TabsList className="self-start flex-shrink-0">
             <TabsTrigger value="vencimientos" className="gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" />
               Vencimientos ({vencimientos.length})
@@ -214,27 +190,32 @@ export function ProcesosModule() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="vencimientos" className="flex-1 mt-4">
-            <DataTable
-              columns={colsVenc}
-              data={vencimientos}
-              searchPlaceholder="Buscar cliente..."
-              emptyMessage={`No hay vencimientos en los próximos ${diasAlerta} días.`}
-              pageSize={20}
-            />
+          <TabsContent value="vencimientos" className="flex-1 mt-4 pb-6">
+            <div className="flex-1 min-h-0 flex flex-col">
+              <DataTable
+                columns={colsVenc}
+                data={vencimientos}
+                searchPlaceholder="Buscar cliente..."
+                emptyMessage={`No hay vencimientos en los próximos ${diasAlerta} días.`}
+                pageSize={500}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="cumpleanos" className="flex-1 mt-4">
-            <DataTable
-              columns={colsCumple}
-              data={cumpleanos}
-              searchPlaceholder="Buscar cliente..."
-              emptyMessage="No hay cumpleaños hoy."
-              pageSize={20}
-            />
+          <TabsContent value="cumpleanos" className="flex-1 mt-4 pb-6">
+            <div className="flex-1 min-h-0 flex flex-col">
+              <DataTable
+                columns={colsCumple}
+                data={cumpleanos}
+                searchPlaceholder="Buscar cliente..."
+                emptyMessage="No hay cumpleaños hoy."
+                pageSize={500}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="inactivar" className="flex-1 mt-4 flex flex-col gap-3">
+          <TabsContent value="inactivar" className="flex-1 mt-4 pb-6">
+            <div className="flex flex-col gap-3">
             {seleccionados.size > 0 && (
               <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-700 font-medium">
@@ -256,8 +237,9 @@ export function ProcesosModule() {
               data={sinActividad}
               searchPlaceholder="Buscar cliente..."
               emptyMessage={`No hay clientes sin actividad en los últimos ${diasInactivar} días.`}
-              pageSize={20}
+              pageSize={500}
             />
+            </div>
           </TabsContent>
         </Tabs>
       )}

@@ -126,13 +126,9 @@ function RecibosLista({ refetchKey, onNuevo, onRefetch }: ListaProps) {
       cell: ({ getValue }) => <span className="font-mono font-bold text-sm">{String(getValue<number>()).padStart(6, "0")}</span>,
     },
     { accessorKey: "fecha", header: "Fecha", size: 100, cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span> },
-    { accessorKey: "nombre_cliente", header: "Cliente", cell: ({ row }) => (
-      <div>
-        <p className="font-medium text-sm leading-tight">{row.original.nombre_cliente || "—"}</p>
-        <p className="text-xs text-slate-400">{row.original.cedula}</p>
-      </div>
-    )},
-    { accessorKey: "total", header: "Total", size: 120, cell: ({ getValue }) => <span className="font-semibold text-sm tabular-nums">{formatCurrency(getValue<number>() ?? 0)}</span> },
+    { accessorKey: "cedula", header: "Cédula", size: 100, cell: ({ row }) => <span className="font-mono text-sm">{row.original.cedula}</span> },
+    { accessorKey: "nombre_cliente", header: "Cliente", size: 220, cell: ({ row }) => <span className="text-sm">{row.original.nombre_cliente || "—"}</span> },
+    { accessorKey: "total", header: "Total", size: 120, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>() ?? 0)}</span> },
     {
       accessorKey: "estado", header: "Estado", size: 90,
       cell: ({ getValue }) => {
@@ -148,22 +144,18 @@ function RecibosLista({ refetchKey, onNuevo, onRefetch }: ListaProps) {
       },
     },
     {
-      id: "acciones", header: "", size: 100,
+      id: "acciones", header: "", size: 130,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 justify-end">
-          <Button
-            variant="ghost" size="icon" className="h-7 w-7" title="Imprimir recibo"
-            onClick={(e) => { e.stopPropagation(); setReciboAImprimir(row.original); }}
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-600" />
-          </Button>
+        <div className="flex items-center gap-2 justify-end">
+          <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-slate-100" onClick={(e) => { e.stopPropagation(); setReciboAImprimir(row.original); }}>
+            <Printer className="w-4 h-4 text-slate-600" />
+            <span className="text-[10px] text-slate-600">Imprimir</span>
+          </button>
           {row.original.estado === "A" && (
-            <Button
-              variant="ghost" size="icon" className="h-7 w-7" title="Anular recibo"
-              onClick={(e) => { e.stopPropagation(); setConfirmAnular(row.original); }}
-            >
-              <Ban className="w-3.5 h-3.5 text-red-500" />
-            </Button>
+            <button className="flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-red-50" onClick={(e) => { e.stopPropagation(); setConfirmAnular(row.original); }}>
+              <Ban className="w-4 h-4 text-red-500" />
+              <span className="text-[10px] text-red-600">Anular</span>
+            </button>
           )}
         </div>
       ),
@@ -175,14 +167,14 @@ function RecibosLista({ refetchKey, onNuevo, onRefetch }: ListaProps) {
   const cantidadDia = recibos.filter(r => r.estado === "A").length;
 
   return (
-    <div className="flex flex-col h-full p-6 gap-4">
+    <div className="flex flex-col h-full overflow-hidden p-6 gap-4">
       <PageHeader
         title="Ventas Gym"
         description="Registro de recibos de pago por membresías y servicios"
         actions={
           <Button onClick={onNuevo} size="sm">
             <Plus className="w-4 h-4 mr-1.5" />
-            Nuevo Recibo
+            Nueva Venta
           </Button>
         }
       />

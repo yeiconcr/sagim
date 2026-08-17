@@ -339,6 +339,7 @@ export interface MovCaja {
   val_ingre: number;
   val_egre: number;
   usuario: string | null;
+  nombre_cliente?: string;
 }
 
 // =============================================
