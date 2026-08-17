@@ -267,7 +267,7 @@ export function ReporteFooter({ pageNumber, totalPages, generadoPor }: FooterPro
   return (
     <View style={styles.footer} fixed>
       <Text style={styles.footerText}>
-        <Text>Generado el {today()} {generadoPor ? `por ${generadoPor}` : ""} · SAGIM v{pkg.version}</Text>
+        <Text>Generado el {today()} {generadoPor ? `por ${generadoPor}` : ""} · SAGIM v{pkg.version} · Desarrollado por Yeison Constain</Text>
         {pageNumber !== undefined ? `  Página ${pageNumber} de ${totalPages ?? "?"}` : ""}
       </Text>
     </View>
