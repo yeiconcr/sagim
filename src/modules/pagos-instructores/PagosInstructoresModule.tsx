@@ -17,7 +17,7 @@ import { useAuthStore } from "@/store/authStore";
 import type { PagoIns, Instructor, Especialidad } from "@/db/types";
 import { getPagosInstructores, registrarPagoInstructor } from "@/db/queries/pagosIns";
 import { getInstructores, getEspecialidades } from "@/db/queries/catalogos";
-import { formatDate, formatCurrency, today } from "@/lib/utils";
+import { formatDate, formatCurrency, today, stripRtf } from "@/lib/utils";
 
 type Vista = "lista" | "nuevo";
 
@@ -103,7 +103,7 @@ export function PagosInstructoresModule() {
       ),
     },
     { accessorKey: "valor", header: "Valor", size: 120, cell: ({ getValue }) => <span className="font-semibold text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
-    { accessorKey: "observaciones", header: "Observaciones", cell: ({ getValue }) => <span className="text-xs text-slate-500">{getValue<string>() || "—"}</span> },
+    { accessorKey: "observaciones", header: "Observaciones", cell: ({ getValue }) => <span className="text-xs text-slate-500">{stripRtf(getValue<string>()) || "—"}</span> },
   ];
 
   if (vista === "nuevo") {

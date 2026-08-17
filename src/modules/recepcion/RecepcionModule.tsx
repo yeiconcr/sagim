@@ -445,45 +445,45 @@ export function RecepcionModule() {
 
       {/* ---- BUSCADOR ---- */}
       {!cliente && (
-        <Card className="mb-6">
-          <CardContent className="p-5">
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  ref={inputRef}
-                  value={busqueda}
-                  onChange={(e) => {
-                    setBusqueda(e.target.value);
-                    setNoEncontrado(false);
-                    setError(null);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Cédula, número de inscripción o nombre..."
-                  className={cn(
-                    "pl-9 h-11 text-base",
-                    noEncontrado && "border-red-300 focus:border-red-400"
-                  )}
-                  autoComplete="off"
-                />
-              </div>
-              <Button
-                onClick={() => handleBuscar()}
-                disabled={buscando || !busqueda.trim()}
-                className="h-11 px-6"
-              >
-                {buscando ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    Buscar
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Mensajes de estado */}
+        <div className="mb-8 flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+            <Input
+              ref={inputRef}
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setNoEncontrado(false);
+                setError(null);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Cédula, número de inscripción o nombre..."
+              className={cn(
+                "pl-14 h-14 text-lg rounded-2xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-visible:ring-blue-500/50 bg-white transition-all",
+                noEncontrado && "ring-2 ring-red-400"
+              )}
+              autoComplete="off"
+            />
+          </div>
+          <Button
+            onClick={() => handleBuscar()}
+            disabled={buscando || !busqueda.trim()}
+            className="h-14 px-8 rounded-2xl text-base shadow-[0_8px_30px_rgb(0,0,0,0.06)] bg-blue-600 hover:bg-blue-700"
+          >
+            {buscando ? (
+              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <Search className="w-5 h-5 mr-2" />
+                Buscar
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+      {!cliente && (
+        <div className="mb-6">
+          {/* Mensajes de estado */}
             {noEncontrado && (
               <div className="mt-3 flex items-center gap-2 text-red-600 text-sm">
                 <UserX className="w-4 h-4 flex-shrink-0" />
@@ -492,14 +492,13 @@ export function RecepcionModule() {
                 </span>
               </div>
             )}
-            {error && (
-              <div className="mt-3 flex items-center gap-2 text-red-600 text-sm">
-                <XCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {error && (
+            <div className="flex items-center gap-2 text-red-600 text-sm ml-2">
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ---- FICHA CLIENTE ---- */}
@@ -520,30 +519,32 @@ export function RecepcionModule() {
               icon: Search,
               title: "Buscar cliente",
               desc: "Ingrese la cédula, número de inscripción o nombre en el campo de búsqueda",
-              color: "text-slate-400",
-              bg: "bg-slate-50",
+              color: "text-blue-500",
+              bg: "bg-gradient-to-br from-blue-50 to-slate-100/50",
             },
             {
               icon: Dumbbell,
               title: "Ventas Gym",
               desc: "Registre pagos de membresías, planes y servicios del gimnasio",
-              color: "text-blue-400",
-              bg: "bg-blue-50",
+              color: "text-indigo-500",
+              bg: "bg-gradient-to-br from-indigo-50 to-indigo-100/50",
             },
             {
               icon: Store,
               title: "Ventas Tienda",
               desc: "Venda suplementos, ropa y artículos del inventario",
-              color: "text-emerald-400",
-              bg: "bg-emerald-50",
+              color: "text-emerald-500",
+              bg: "bg-gradient-to-br from-emerald-50 to-emerald-100/50",
             },
           ].map((item) => (
-            <Card key={item.title} className="border-dashed">
-              <CardContent className={cn("p-6 text-center", item.bg)}>
-                <item.icon className={cn("w-8 h-8 mx-auto mb-3", item.color)} />
-                <p className="text-sm font-semibold text-slate-700 mb-1">{item.title}</p>
-                <p className="text-xs text-slate-500">{item.desc}</p>
-              </CardContent>
+            <Card key={item.title} className="border-0 bg-transparent overflow-hidden">
+              <div className={cn("p-8 text-center h-full flex flex-col items-center justify-center transition-transform hover:-translate-y-1 duration-300", item.bg)}>
+                <div className="p-4 bg-white rounded-2xl shadow-sm mb-4">
+                  <item.icon className={cn("w-8 h-8", item.color)} />
+                </div>
+                <p className="text-base font-bold text-slate-800 mb-2">{item.title}</p>
+                <p className="text-sm text-slate-500">{item.desc}</p>
+              </div>
             </Card>
           ))}
         </div>

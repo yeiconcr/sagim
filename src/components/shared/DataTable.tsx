@@ -97,9 +97,9 @@ export function DataTable<TData, TValue = unknown>({
       )}
 
       {/* Tabla */}
-      <div className="flex-1 overflow-auto rounded-md border bg-white">
+      <div className="flex-1 overflow-auto rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b sticky top-0 z-10">
+          <thead className="bg-transparent border-b border-slate-100/60 sticky top-0 z-10 backdrop-blur-md">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -110,7 +110,7 @@ export function DataTable<TData, TValue = unknown>({
                       key={header.id}
                       colSpan={header.colSpan}
                       className={cn(
-                        "h-9 px-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap select-none",
+                        "h-12 px-4 text-left text-[13px] font-semibold text-slate-500 whitespace-nowrap select-none",
                         canSort && "cursor-pointer hover:text-slate-800"
                       )}
                       style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
@@ -138,7 +138,7 @@ export function DataTable<TData, TValue = unknown>({
             ))}
           </thead>
 
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y-0">
             {loading ? (
               <tr>
                 <td colSpan={columns.length} className="py-12 text-center">
@@ -160,11 +160,14 @@ export function DataTable<TData, TValue = unknown>({
                   key={row.id}
                   onClick={() => onRowClick?.(row.original)}
                   className={cn(
-                    onRowClick && "cursor-pointer hover:bg-blue-50/60 active:bg-blue-100/60"
+                    "border-b border-slate-50/80 transition-colors duration-200",
+                    onRowClick 
+                      ? "cursor-pointer hover:bg-slate-50/80 active:bg-slate-100/80"
+                      : "hover:bg-slate-50/40"
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-3 py-2.5 text-slate-700">
+                    <td key={cell.id} className="px-4 py-3.5 text-slate-700">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

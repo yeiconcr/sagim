@@ -56,3 +56,57 @@ export function daysBetween(from: Date | string, to: Date | string): number {
 export function today(): string {
   return toISODate(new Date());
 }
+
+export function stripRtf(str: string | null | undefined): string {
+  if (!str) return "";
+  if (typeof str !== "string") return String(str);
+  if (!str.includes("\\rtf")) return str;
+  
+  return str
+    .replace(/\{\\fonttbl.*?\}/g, "")
+    .replace(/\{\\colortbl.*?\}/g, "")
+    .replace(/\\par(d)?/g, " ")
+    .replace(/\\[a-z]+(-?\d+)? ?/ig, "")
+    .replace(/[{}]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+import * as XLSX from "xlsx";
+
+/**
+ * Convierte datos a Excel (.xlsx) y abre el diálogo de guardado nativo.
+ */
+export async function exportToExcel(filename: string, headers: string[], rows: (string | number | boolean | null | undefined)[][]): Promise<boolean> {
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+  
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
+  
+  if (isTauri) {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const { writeFile } = await import("@tauri-apps/plugin-fs");
+    
+    const filePath = await save({ defaultPath: filename, filters: [{ name: "Excel", extensions: ["xlsx"] }] });
+    if (filePath) {
+      await writeFile(filePath, new Uint8Array(excelBuffer));
+      return true;
+    }
+  } else {
+    const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return true;
+  }
+  return false;
+}

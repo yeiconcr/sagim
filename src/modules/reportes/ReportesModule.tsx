@@ -33,7 +33,7 @@ import {
   MovimientoCajaPDF, VentasDiariasPDF, ComprasRealizadasPDF,
   CuentasPorPagarPDF, EgresosPDF, CobrosRealizadosPDF, ReciboInstructorPDF,
 } from "@/components/pdf/reportes";
-import { formatDate, formatCurrency, today } from "@/lib/utils";
+import { formatDate, formatCurrency, today, exportToExcel } from "@/lib/utils";
 import type { Parametros } from "@/db/types";
 
 // =============================================
@@ -87,6 +87,103 @@ export function ReportesModule() {
     setEstado("configurar");
     setDocElement(null);
   };
+
+  const descargarExcel = useCallback(async () => {
+    if (!reporteSeleccionado) return;
+    setGenerando(true);
+    try {
+      let headers: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let rows: any[][] = [];
+      const filename = `${reporteSeleccionado.id}_${today()}.xlsx`;
+
+      switch (reporteSeleccionado.id) {
+        case "listado-clientes": {
+          const result = await getClientes({ pageSize: 99999, estado: filtroEstado });
+          headers = ["Cédula", "Nombres", "Apellidos", "Sexo", "Teléfono", "Email", "Inscripción", "Estado"];
+          rows = result.data.map(c => [c.cedula, c.nombres, c.apellidos, c.sexo, c.telefono, c.email, c.fecha_inscripcion, c.estado === "A" ? "Activo" : "Inactivo"]);
+          break;
+        }
+        case "inventario": {
+          const result = await getInventario({ pageSize: 99999, estado: filtroEstado });
+          headers = ["Código", "Nombre", "Stock", "Precio Compra", "Precio Venta", "Estado"];
+          rows = result.data.map(a => [a.codigo, a.nombre, a.stock, a.precio_compra, a.precio_venta, a.estado === "A" ? "Activo" : "Inactivo"]);
+          break;
+        }
+        case "cuentas-por-pagar": {
+          const { getCtasPorPagar } = await import("@/db/queries/compras");
+          const cuentas = await getCtasPorPagar(false);
+          headers = ["Proveedor", "Fecha Doc", "Vencimiento", "Importe", "Pagado", "Saldo", "Estado"];
+          rows = cuentas.map(c => [c.nombre_proveedor, c.fecha_doc, c.fecha_ven, c.importe, c.pagado, c.saldo, c.estado === "P" ? "PENDIENTE" : "CANCELADA"]);
+          break;
+        }
+        case "ventas-diarias": {
+          const [recibos, facturas] = await Promise.all([
+            getRecibos({ pageSize: 99999, fechaDesde, fechaHasta, estado: "A" }),
+            getFacturasTienda({ pageSize: 99999, fechaDesde, fechaHasta, estado: "A" }),
+          ]);
+          headers = ["Tipo", "Nro Documento", "Fecha", "Cliente", "Total"];
+          rows = [
+            ...recibos.data.map(r => ["Recibo Gym", String(r.nro_docu), r.fecha, r.nombre_cliente || r.cedula, r.total]),
+            ...facturas.data.map(f => ["Factura Tienda", String(f.nro_docu), f.fecha, f.nombre_cliente || f.cedula, f.total])
+          ].sort((a, b) => String(a[2]).localeCompare(String(b[2])));
+          break;
+        }
+        case "movimiento-caja": {
+          const result = await getMovimientosCaja({ pageSize: 99999, fechaDesde, fechaHasta });
+          headers = ["Fecha", "Referencia", "Concepto", "Tipo", "Valor"];
+          rows = result.data.map(m => [m.fecha, m.referencia, m.concepto, m.natural === "I" ? "INGRESO" : "EGRESO", m.valor]);
+          break;
+        }
+        case "egresos": {
+          const result = await getMovimientosCaja({ pageSize: 99999, fechaDesde, fechaHasta });
+          const egresos = result.data.filter(m => m.natural === "E");
+          headers = ["Fecha", "Referencia", "Concepto", "Valor"];
+          rows = egresos.map(m => [m.fecha, m.referencia, m.concepto, m.valor]);
+          break;
+        }
+        case "cobros-realizados": {
+          const result = await getRecibos({ pageSize: 99999, fechaDesde, fechaHasta, estado: "A" });
+          headers = ["Nro Recibo", "Fecha", "Cliente", "Cédula", "Total"];
+          rows = result.data.map(r => [r.nro_docu, r.fecha, r.nombre_cliente, r.cedula, r.total]);
+          break;
+        }
+        case "compras-realizadas": {
+          const result = await getCompras({ pageSize: 99999, fechaDesde, fechaHasta });
+          headers = ["Nro Compra", "Fecha", "Proveedor", "Doc Ref", "Forma Pago", "Total"];
+          rows = result.data.map(c => [c.nro_compra, c.fecha, c.nombre_proveedor, c.nro_documento, c.nombre_forma_pago, c.total]);
+          break;
+        }
+        case "pagos-instructores": {
+          const result = await getPagosInstructores({ pageSize: 99999, fechaDesde, fechaHasta });
+          headers = ["Fecha Pago", "Instructor", "Especialidad", "Periodo Ini", "Periodo Fin", "Valor"];
+          rows = result.data.map(p => [p.fecha_pag, p.nombre_instructor, p.nombre_especialidad, p.periodo_ini, p.periodo_fin, p.valor]);
+          break;
+        }
+        case "kardex": {
+          if (!codigoArticulo.trim()) { error("Falta código", "Ingrese el código del artículo."); setGenerando(false); return; }
+          const { getArticuloByCodigo } = await import("@/db/queries/inventario");
+          const art = await getArticuloByCodigo(codigoArticulo.trim());
+          if (!art) { error("No encontrado", "No existe artículo."); setGenerando(false); return; }
+          const kardex = await getKardexByArticulo(codigoArticulo.trim(), fechaDesde, fechaHasta);
+          headers = ["Fecha", "Detalle", "Cant. Entrada", "Val. Entrada", "Cant. Salida", "Val. Salida", "Saldo"];
+          rows = kardex.map(k => [k.fecha, k.detalle, k.cantidad_in > 0 ? `+${k.cantidad_in}` : "", k.total_in > 0 ? k.total_in : "", k.cantidad_sa > 0 ? `-${k.cantidad_sa}` : "", k.total_sa > 0 ? k.total_sa : "", k.saldo]);
+          break;
+        }
+        default:
+          error("Exportación no soportada", "Este reporte no soporta exportación a Excel.");
+          setGenerando(false);
+          return;
+      }
+
+      await exportToExcel(filename, headers, rows);
+
+    } catch (err) {
+      error("Error al exportar", String(err));
+    } finally {
+      setGenerando(false);
+    }
+  }, [reporteSeleccionado, fechaDesde, fechaHasta, cedula, codigoArticulo, filtroEstado, error]);
 
   const generarReporte = useCallback(async () => {
     if (!reporteSeleccionado) return;
@@ -481,12 +578,29 @@ export function ReportesModule() {
 
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="outline" onClick={() => setEstado("lista")}><ArrowLeft className="w-4 h-4 mr-1.5" />Volver</Button>
-          <Button onClick={generarReporte} disabled={generando} className="min-w-[140px]">
-            {generando
-              ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generando...</span>
-              : <><FileText className="w-4 h-4 mr-1.5" />Generar PDF</>
-            }
-          </Button>
+          
+          {["listado-clientes", "inventario", "cuentas-por-pagar"].includes(r.id) ? (
+            <Button onClick={descargarExcel} disabled={generando} className="min-w-[140px] bg-green-600 hover:bg-green-700">
+              {generando
+                ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generando...</span>
+                : <><Download className="w-4 h-4 mr-1.5" />Descargar Excel</>
+              }
+            </Button>
+          ) : (
+            <>
+              {!["ficha-cliente", "trazabilidad-medidas"].includes(r.id) && (
+                <Button onClick={descargarExcel} disabled={generando} variant="outline" className="text-green-700 border-green-600 hover:bg-green-50">
+                  <Download className="w-4 h-4 mr-1.5" />Exportar a Excel
+                </Button>
+              )}
+              <Button onClick={generarReporte} disabled={generando} className="min-w-[140px]">
+                {generando
+                  ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generando PDF...</span>
+                  : <><FileText className="w-4 h-4 mr-1.5" />Generar PDF</>
+                }
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -496,6 +610,72 @@ export function ReportesModule() {
 function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElement; titulo: string; reporteId: string; onVolver: () => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [instance] = usePDF({ document: doc as any });
+  const [descargando, setDescargando] = useState(false);
+  const [imprimiendo, setImprimiendo] = useState(false);
+
+  const handleDescargar = async () => {
+    if (!instance.blob || !instance.url) return;
+    try {
+      setDescargando(true);
+      const filename = `${reporteId}_${today()}.pdf`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
+      
+      if (isTauri) {
+        const { save } = await import("@tauri-apps/plugin-dialog");
+        const { writeFile } = await import("@tauri-apps/plugin-fs");
+        const filePath = await save({ defaultPath: filename, filters: [{ name: "PDF", extensions: ["pdf"] }] });
+        if (filePath) {
+          const arrayBuffer = await instance.blob.arrayBuffer();
+          await writeFile(filePath, new Uint8Array(arrayBuffer));
+        }
+      } else {
+        const a = document.createElement("a");
+        a.href = instance.url;
+        a.download = filename;
+        a.click();
+      }
+    } catch (e) {
+      console.error("Error al descargar PDF:", e);
+    } finally {
+      setDescargando(false);
+    }
+  };
+
+  const handleImprimir = async () => {
+    if (!instance.blob || !instance.url) return;
+    try {
+      setImprimiendo(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isTauri = typeof window !== "undefined" && !!(window as any).__TAURI_INTERNALS__;
+      if (isTauri) {
+        const { appDataDir, join } = await import("@tauri-apps/api/path");
+        const { writeFile, mkdir, exists } = await import("@tauri-apps/plugin-fs");
+        const { openPath } = await import("@tauri-apps/plugin-opener");
+        
+        const appData = await appDataDir();
+        const tempDocsPath = await join(appData, "temp_docs");
+        
+        if (!(await exists(tempDocsPath))) {
+          await mkdir(tempDocsPath, { recursive: true });
+        }
+        
+        const filePath = await join(tempDocsPath, `${reporteId}_print_${Date.now()}.pdf`);
+        const arrayBuffer = await instance.blob.arrayBuffer();
+        await writeFile(filePath, new Uint8Array(arrayBuffer));
+        
+        await openPath(filePath);
+      } else {
+        const w = window.open(instance.url, "_blank");
+        w?.print();
+      }
+    } catch (e) {
+      console.error("Error al imprimir PDF:", e);
+    } finally {
+      setImprimiendo(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white flex-shrink-0">
@@ -506,29 +686,17 @@ function PdfPreview({ doc, titulo, reporteId, onVolver }: { doc: React.ReactElem
           <span className="text-sm font-medium text-slate-700">{titulo}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" disabled={instance.loading || !instance.url}
-            onClick={() => {
-              if (instance.url) {
-                const a = document.createElement("a");
-                a.href = instance.url;
-                a.download = `${reporteId}_${today()}.pdf`;
-                a.click();
-              }
-            }}
+          <Button size="sm" variant="outline" disabled={instance.loading || !instance.url || descargando}
+            onClick={handleDescargar}
           >
             <Download className="w-3.5 h-3.5 mr-1.5" />
-            {instance.loading ? "Preparando..." : "Descargar PDF"}
+            {instance.loading || descargando ? "Preparando..." : "Descargar PDF"}
           </Button>
-          <Button size="sm" disabled={instance.loading || !instance.url}
-            onClick={() => {
-              if (instance.url) {
-                const w = window.open(instance.url, "_blank");
-                w?.print();
-              }
-            }}
+          <Button size="sm" disabled={instance.loading || !instance.url || imprimiendo}
+            onClick={handleImprimir}
           >
             <Printer className="w-3.5 h-3.5 mr-1.5" />
-            {instance.loading ? "Preparando..." : "Imprimir"}
+            {instance.loading || imprimiendo ? "Preparando..." : "Imprimir"}
           </Button>
         </div>
       </div>

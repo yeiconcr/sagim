@@ -185,7 +185,7 @@ export function ArticulosTab() {
         </div>
       ),
     },
-    { accessorKey: "stock", header: "Stock", size: 80, cell: ({ row }) => <span className={cn("text-sm font-semibold tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock} <span className="text-xs text-slate-400 font-normal">{row.original.unidad_medida}</span></span> },
+    { accessorKey: "stock", header: "Stock", size: 80, cell: ({ row }) => <span className={cn("text-base font-bold tabular-nums", row.original.stock <= 0 && "text-red-500")}>{row.original.stock} <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded ml-1 font-medium">{row.original.unidad_medida}</span></span> },
     { accessorKey: "precio_compra", header: "P. Compra", size: 110, cell: ({ getValue }) => <span className="text-sm tabular-nums">{formatCurrency(getValue<number>())}</span> },
     {
       id: "precio_venta", header: "P. Venta", size: 110,

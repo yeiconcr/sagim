@@ -5,6 +5,7 @@
 import {
   Document, Page, Text, View, StyleSheet, Font,
 } from "@react-pdf/renderer";
+import { today } from "@/lib/utils";
 
 // Paleta de colores corporativa
 export const COLORS = {
@@ -88,7 +89,6 @@ export const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
     color: COLORS.white,
-    flex: 1,
   },
   tableRow: {
     flexDirection: "row",
@@ -103,7 +103,6 @@ export const styles = StyleSheet.create({
   tableCell: {
     fontSize: 8,
     color: COLORS.text,
-    flex: 1,
   },
   tableCellBold: {
     fontFamily: "Helvetica-Bold",
@@ -264,10 +263,9 @@ interface FooterProps {
 export function ReporteFooter({ pageNumber, totalPages, generadoPor }: FooterProps) {
   return (
     <View style={styles.footer} fixed>
-      <Text style={styles.footerText}>SAGIM v1.0.0 — Sistema Administrativo de Gimnasios</Text>
       <Text style={styles.footerText}>
-        {generadoPor ? `Generado por: ${generadoPor}  ` : ""}
-        {pageNumber !== undefined ? `Página ${pageNumber} de ${totalPages ?? "?"}` : ""}
+        <Text>Generado el {today()} {generadoPor ? `por ${generadoPor}` : ""} · SAGIM v1.0.7</Text>
+        {pageNumber !== undefined ? `  Página ${pageNumber} de ${totalPages ?? "?"}` : ""}
       </Text>
     </View>
   );
@@ -285,38 +283,36 @@ export function ReporteTable<T extends Record<string, unknown>>({ headers, data,
       {/* Header */}
       <View style={styles.tableHeader}>
         {headers.map((h, i) => (
-          <Text
+          <View
             key={i}
             style={[
-              styles.tableHeaderCell,
-              h.width ? { flex: 0, width: h.width } : {},
-              h.align === "right" ? { textAlign: "right" } : {},
-              h.align === "center" ? { textAlign: "center" } : {},
+              h.width ? { width: h.width } : { flex: 1 },
+              h.align === "right" ? { alignItems: "flex-end" } : {},
+              h.align === "center" ? { alignItems: "center" } : {},
             ]}
           >
-            {h.label}
-          </Text>
+            <Text style={styles.tableHeaderCell}>{h.label}</Text>
+          </View>
         ))}
       </View>
       {/* Rows */}
       {data.map((row, ri) => (
-        <View key={ri} style={[styles.tableRow, ri % 2 === 1 ? styles.tableRowAlt : {}]}>
+        <View key={ri} style={[styles.tableRow, ri % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
           {headers.map((h, ci) => {
             const val = getCell
               ? getCell(row, String(h.key))
               : String(row[h.key as keyof T] ?? "—");
             return (
-              <Text
+              <View
                 key={ci}
                 style={[
-                  styles.tableCell,
-                  h.width ? { flex: 0, width: h.width } : {},
-                  h.align === "right" ? styles.tableCellRight : {},
-                  h.align === "center" ? styles.tableCellCenter : {},
+                  h.width ? { width: h.width } : { flex: 1 },
+                  h.align === "right" ? { alignItems: "flex-end" } : {},
+                  h.align === "center" ? { alignItems: "center" } : {},
                 ]}
               >
-                {val}
-              </Text>
+                <Text style={styles.tableCell}>{val}</Text>
+              </View>
             );
           })}
         </View>

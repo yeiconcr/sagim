@@ -1,46 +1,57 @@
-export function printHtmlReceipt(htmlContent: string) {
-  // Crear el contenedor de impresión
-  const printDiv = document.createElement("div");
-  printDiv.id = "pos-print-area";
-  printDiv.innerHTML = htmlContent;
-  document.body.appendChild(printDiv);
+import { writeTextFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { join, appDataDir } from "@tauri-apps/api/path";
+import { openPath } from "@tauri-apps/plugin-opener";
 
-  // Inyectar estilos globales de impresión si no existen
-  let style = document.getElementById("pos-print-style");
-  if (!style) {
-    style = document.createElement("style");
-    style.id = "pos-print-style";
-    style.innerHTML = `
-      @media screen {
-        #pos-print-area { display: none !important; }
-      }
-      @media print {
-        body > *:not(#pos-print-area) { display: none !important; }
-        #pos-print-area { 
-          display: block !important; 
-          position: absolute; 
-          left: 0; 
-          top: 0; 
-          width: 80mm; 
-          margin: 0;
-          padding: 0;
-          background: white;
-        }
-        @page { margin: 0; size: 80mm auto; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  // Dar un pequeño tiempo para que el DOM se actualice y luego imprimir
-  setTimeout(() => {
-    window.print();
+export async function printHtmlReceipt(htmlContent: string) {
+  try {
+    // 1. Obtener el directorio de datos de la app (permitido en scope)
+    const appData = await appDataDir();
+    const tempDocsPath = await join(appData, "temp_docs");
     
-    // Limpiar el DOM después de imprimir
-    setTimeout(() => {
-      if (document.body.contains(printDiv)) {
-        document.body.removeChild(printDiv);
-      }
-    }, 1000);
-  }, 100);
+    // Crear el directorio si no existe
+    if (!(await exists(tempDocsPath))) {
+      await mkdir(tempDocsPath, { recursive: true });
+    }
+    
+    const filePath = await join(tempDocsPath, `sagim_receipt_${Date.now()}.html`);
+    
+    // 2. Crear un documento HTML completo con estilos de tirilla
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Impresión de Recibo</title>
+        <style>
+          @media print {
+            @page { margin: 0; size: 80mm auto; }
+            body { margin: 0; padding: 0; }
+          }
+          body { 
+            width: 80mm; 
+            margin: 0 auto; 
+            padding: 10px; 
+            background: white; 
+            color: black;
+            font-family: monospace; 
+          }
+        </style>
+      </head>
+      <body onload="setTimeout(() => window.print(), 500)">
+        ${htmlContent}
+      </body>
+      </html>
+    `;
+    
+    // 3. Guardar el archivo
+    await writeTextFile(filePath, fullHtml);
+    
+    // 4. Abrirlo en el navegador por defecto del usuario
+    await openPath(filePath);
+    
+  } catch (err) {
+    console.error("Error al generar archivo de impresión", err);
+    // Fallback simple
+    window.print();
+  }
 }

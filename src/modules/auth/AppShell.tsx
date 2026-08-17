@@ -8,12 +8,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { getParametros } from "@/db/queries/configuracion";
+
+// Logo real
+import sagimLogo from "@/assets/sagim-logo.png";
 import { useAuthStore } from "@/store/authStore";
 import { useAppStore, type ModuloActivo } from "@/store/appStore";
 import { getDb } from "@/db/database";
 import { today, addDays, toISODate } from "@/lib/utils";
+import { getVersion } from "@tauri-apps/api/app";
 import { PageLoading } from "@/components/shared/LoadingSpinner";
-
 
 // =============================================
 // MÓDULOS LAZY — solo se cargan cuando se usan
@@ -92,6 +96,7 @@ interface SidebarProps {
   nivelUsuario: number;
   nombreUsuario: string;
   cargoUsuario: string;
+  appVersion: string;
   onSetModulo: (m: ModuloActivo) => void;
   onToggle: () => void;
   onLogout: () => void;
@@ -99,7 +104,7 @@ interface SidebarProps {
 
 const Sidebar = memo(function Sidebar({
   nombreGimnasio, moduloActivo, sidebarCollapsed, vencimientosHoy,
-  nivelUsuario, nombreUsuario, cargoUsuario,
+  nivelUsuario, nombreUsuario, cargoUsuario, appVersion,
   onSetModulo, onToggle, onLogout,
 }: SidebarProps) {
   const menuItemsVisible = MENU_ITEMS.filter(
@@ -116,13 +121,13 @@ const Sidebar = memo(function Sidebar({
         "flex items-center h-14 border-b border-slate-700/60 flex-shrink-0",
         sidebarCollapsed ? "px-3 justify-center" : "px-4 gap-3"
       )}>
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <Dumbbell className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-transparent overflow-hidden">
+          <img src={sagimLogo} alt="Logo" className="w-full h-full object-contain" />
         </div>
         {!sidebarCollapsed && (
           <div className="min-w-0 flex-1">
-            <p className="font-black text-sm text-white truncate leading-tight">{nombreGimnasio}</p>
-            <p className="text-[10px] text-slate-400 leading-tight">v1.0.0</p>
+            <p className="font-black text-sm text-white line-clamp-2 leading-tight break-words">{nombreGimnasio}</p>
+            <span className="text-xs text-emerald-400 mt-0.5 font-medium">{appVersion}</span>
           </div>
         )}
       </div>
@@ -217,7 +222,7 @@ const Topbar = memo(function Topbar({
   onToggleSidebar, onIrProcesos,
 }: TopbarProps) {
   return (
-    <header className="flex items-center justify-between h-14 px-4 border-b bg-white flex-shrink-0 shadow-sm">
+    <header className="flex items-center justify-between h-14 px-4 border-b bg-white flex-shrink-0 shadow-sm relative z-10">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-8 w-8 text-slate-500 hover:text-slate-700">
           {sidebarCollapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -256,6 +261,7 @@ export function AppShell() {
   const { usuario, logout } = useAuthStore();
   const { moduloActivo, sidebarCollapsed, vencimientosHoy, setModulo, toggleSidebar, setVencimientosHoy } = useAppStore();
   const [nombreGimnasio, setNombreGimnasio] = useState("SAGIM");
+  const [appVersion, setAppVersion] = useState("");
 
   // Cargar nombre del gimnasio y vencimientos UNA SOLA VEZ al montar
   useEffect(() => {
@@ -294,6 +300,7 @@ export function AppShell() {
       }
     }
     loadData();
+    getVersion().then(v => { if(!cancelled) setAppVersion("v" + v) }).catch(console.error);
     return () => { cancelled = true; };
   }, [setVencimientosHoy]);
 
@@ -315,6 +322,7 @@ export function AppShell() {
         nivelUsuario={usuario?.nivel ?? 2}
         nombreUsuario={usuario?.nombre ?? ""}
         cargoUsuario={usuario?.cargo ?? ""}
+        appVersion={appVersion}
         onSetModulo={handleSetModulo}
         onToggle={handleToggleSidebar}
         onLogout={handleLogout}
@@ -331,7 +339,7 @@ export function AppShell() {
           onIrProcesos={handleIrProcesos}
         />
 
-        <main className="flex-1 overflow-auto bg-slate-50">
+        <main className="flex-1 overflow-auto bg-slate-50 relative z-0">
           <ModuleRenderer modulo={moduloActivo} />
         </main>
       </div>
