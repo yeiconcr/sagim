@@ -39,6 +39,17 @@
     "copyright": "SAGIM 2024",
     "category": "Business",
     "shortDescription": "Sistema Administrativo de Gimnasios",
-    "longDescription": "Sistema completo de administracion para gimnasios."
+    "longDescription": "Sistema completo de administracion para gimnasios.",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": null,
+      "frameworks": [],
+      "infoPlist": {
+        "NSCameraUsageDescription": "SAGIM necesita acceso a la cámara para capturar fotos de los clientes."
+      },
+      "minimumSystemVersion": "10.13",
+      "providerShortName": null,
+      "signingIdentity": null
+    }
   }
 }
