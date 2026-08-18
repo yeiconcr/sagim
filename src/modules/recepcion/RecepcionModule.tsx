@@ -14,7 +14,7 @@ import { getDb } from "@/db/database";
 import { getAsistenciasCliente } from "@/db/queries/asistencias";
 import { useDebounce } from "@/hooks/useDebounce";
 import { WebcamCapture } from "@/components/shared/WebcamCapture";
-import { guardarFotoCliente } from "@/lib/photos";
+import { guardarFotoCliente, obtenerUrlFoto } from "@/lib/photos";
 
 // =============================================
 // TIPOS
@@ -78,7 +78,41 @@ const STORAGE_KEY_RECIENTES = "sagim_clientes_recientes";
 const MAX_RECIENTES = 5;
 const DEBOUNCE_MS = 400;
 
+// =============================================
+// COMPONENTE FOTO CLIENTE (carga async)
+// =============================================
+function FotoCliente({ fotoPath, className, fallbackSize = "w-12 h-12" }: { fotoPath: string | null; className?: string; fallbackSize?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
+  useEffect(() => {
+    setError(false);
+    if (!fotoPath) {
+      setUrl(null);
+      return;
+    }
+    
+    obtenerUrlFoto(fotoPath).then(setUrl).catch(() => setUrl(null));
+  }, [fotoPath]);
+
+  if (!fotoPath || error || !url) {
+    return (
+      <div className={cn("flex flex-col items-center justify-center gap-1 text-slate-300", className)}>
+        <User className={fallbackSize} />
+        {!className?.includes("w-5") && !className?.includes("w-8") && <span className="text-xs">Sin foto</span>}
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={url} 
+      alt="" 
+      className={cn("object-cover", className)} 
+      onError={() => setError(true)} 
+    />
+  );
+}
 
 // =============================================
 // QUERIES
@@ -228,11 +262,7 @@ function FichaCliente({ cliente, onVentasGym, onVentasTienda, onVerPagos, onVerM
       <div className="flex flex-col gap-3">
         <Card className="overflow-hidden">
           <div className="aspect-[3/4] bg-slate-100 relative flex items-center justify-center cursor-pointer group" onClick={() => setMostrarWebcam(true)}>
-            {cliente.foto_path ? (
-              <img src={`/fotos/${cliente.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-slate-300"><User className="w-12 h-12" /><span className="text-xs">Sin foto</span></div>
-            )}
+            <FotoCliente key={cliente.foto_path || 'no-foto'} fotoPath={cliente.foto_path} className="w-full h-full" fallbackSize="w-12 h-12" />
             {/* Overlay con ícono de cámara al hover */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
               <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -500,7 +530,7 @@ export function RecepcionModule() {
                   {coincidencias.map((c) => (
                     <button key={c.cedula} onClick={() => handleSeleccionarCliente(c.cedula)} className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors border-b last:border-b-0 text-left">
                       <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {c.foto_path ? <img src={`/fotos/${c.foto_path}`} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <User className="w-4 h-4 text-slate-400" />}
+                        <FotoCliente fotoPath={c.foto_path} className="w-full h-full" fallbackSize="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-slate-800 text-sm truncate">{c.nombres} {c.apellidos}</p>
@@ -563,7 +593,7 @@ export function RecepcionModule() {
                 {recientes.map((r) => (
                   <button key={r.cedula} onClick={() => handleSeleccionarReciente(r.cedula)} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm">
                     <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                      {r.foto_path ? <img src={`/fotos/${r.foto_path}`} alt="" className="w-full h-full object-cover" /> : <User className="w-3 h-3 text-slate-400" />}
+                      <FotoCliente fotoPath={r.foto_path} className="w-full h-full" fallbackSize="w-3 h-3" />
                     </div>
                     <span className="text-slate-700 max-w-[100px] truncate">{r.nombre}</span>
                   </button>

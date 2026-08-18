@@ -1,4 +1,4 @@
-import { writeFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { writeFile, mkdir, exists, readFile } from "@tauri-apps/plugin-fs";
 import { appDataDir } from "@tauri-apps/api/path";
 
 /**
@@ -11,7 +11,12 @@ export async function guardarFotoCliente(base64Data: string, inscripcion: number
   try {
     // Obtener directorio de la app
     const dataDir = await appDataDir();
-    const fotosDir = `${dataDir}/fotos`;
+    // Asegurar que termine con /
+    const basePath = dataDir.endsWith('/') ? dataDir : `${dataDir}/`;
+    const fotosDir = `${basePath}fotos`;
+    
+    console.log(`[Photos] appDataDir: "${dataDir}"`);
+    console.log(`[Photos] fotosDir: "${fotosDir}"`);
 
     // Crear directorio si no existe
     const dirExists = await exists(fotosDir);
@@ -46,24 +51,33 @@ export async function guardarFotoCliente(base64Data: string, inscripcion: number
 }
 
 /**
- * Obtiene la ruta completa de una foto de cliente
+ * Obtiene la URL para mostrar una foto de cliente
  * @param fileName - Nombre del archivo de foto
- * @returns Ruta completa o null si no existe
+ * @returns URL convertida para mostrar en img src, o null
  */
-export async function obtenerRutaFoto(fileName: string | null): Promise<string | null> {
+export async function obtenerUrlFoto(fileName: string | null): Promise<string | null> {
   if (!fileName) return null;
   
   try {
     const dataDir = await appDataDir();
-    const filePath = `${dataDir}/fotos/${fileName}`;
+    const basePath = dataDir.endsWith('/') ? dataDir : `${dataDir}/`;
+    const filePath = `${basePath}fotos/${fileName}`;
     const fileExists = await exists(filePath);
     
+    console.log(`[Photos] Verificando: ${filePath}, existe: ${fileExists}`);
+    
     if (fileExists) {
-      // En Tauri, usar asset: protocol para cargar archivos locales
-      return `asset://localhost/${filePath}`;
+      // Leer archivo y convertir a base64 data URL
+      const bytes = await readFile(filePath);
+      const base64 = btoa(String.fromCharCode(...bytes));
+      const dataUrl = `data:image/jpeg;base64,${base64}`;
+      console.log(`[Photos] Imagen cargada como data URL (${bytes.length} bytes)`);
+      return dataUrl;
     }
+    console.log(`[Photos] Archivo no existe: ${filePath}`);
     return null;
-  } catch {
+  } catch (err) {
+    console.error("[Photos] Error obteniendo foto:", err);
     return null;
   }
 }
