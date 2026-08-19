@@ -93,37 +93,36 @@
   }
 
   /* ── Variables de tema oscuro ──
-     Al cambiar estas variables, TODOS los componentes que usan
-     bg-background, bg-card, text-foreground, etc. se actualizan
-     automáticamente porque usan hsl(var(--background)) internamente. */
+     Fondo gris oscuro suave (estilo GitHub Dark / VS Code)
+     — no negro puro, más agradable para uso prolongado. */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 47.4% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 221.2 83.2% 60%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 22%;
-    --input: 217.2 32.6% 22%;
-    --ring: 221.2 83.2% 60%;
-    --sidebar: 222.2 47.4% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221.2 83.2% 60%;
-    --sidebar-primary-foreground: 222.2 84% 4.9%;
-    --sidebar-accent: 217.2 32.6% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 14%;
-    --sidebar-ring: 221.2 83.2% 60%;
+    --background: 220 16% 15%;
+    --foreground: 220 20% 92%;
+    --card: 220 16% 19%;
+    --card-foreground: 220 20% 92%;
+    --popover: 220 16% 17%;
+    --popover-foreground: 220 20% 92%;
+    --primary: 221.2 83.2% 62%;
+    --primary-foreground: 220 16% 10%;
+    --secondary: 220 16% 24%;
+    --secondary-foreground: 220 20% 88%;
+    --muted: 220 16% 22%;
+    --muted-foreground: 220 14% 62%;
+    --accent: 220 16% 24%;
+    --accent-foreground: 220 20% 92%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 220 20% 92%;
+    --border: 220 16% 26%;
+    --input: 220 16% 26%;
+    --ring: 221.2 83.2% 62%;
+    --sidebar: 220 20% 11%;
+    --sidebar-foreground: 220 16% 85%;
+    --sidebar-primary: 221.2 83.2% 62%;
+    --sidebar-primary-foreground: 220 16% 10%;
+    --sidebar-accent: 220 16% 17%;
+    --sidebar-accent-foreground: 220 16% 85%;
+    --sidebar-border: 220 16% 18%;
+    --sidebar-ring: 221.2 83.2% 62%;
   }
 }
 
@@ -159,85 +158,85 @@
 
 /* Fondos blancos y slate claros */
 :where(.dark) .bg-white {
-  background-color: hsl(222.2 47.4% 10%);
+  background-color: hsl(220 16% 21%);
 }
 :where(.dark) .bg-slate-50 {
-  background-color: hsl(222.2 47.4% 9%);
+  background-color: hsl(220 16% 18%);
 }
 :where(.dark) .bg-slate-100 {
-  background-color: hsl(217.2 32.6% 14%);
+  background-color: hsl(220 16% 22%);
 }
 :where(.dark) .bg-slate-200 {
-  background-color: hsl(217.2 32.6% 18%);
+  background-color: hsl(220 16% 26%);
 }
 
 /* Colores semánticos claros → versiones oscuras */
 :where(.dark) .bg-blue-50 {
-  background-color: hsl(217 50% 12%);
+  background-color: hsl(217 40% 20%);
 }
 :where(.dark) .bg-indigo-50 {
-  background-color: hsl(240 50% 12%);
+  background-color: hsl(240 35% 20%);
 }
 :where(.dark) .bg-emerald-50 {
-  background-color: hsl(152 50% 10%);
+  background-color: hsl(152 35% 17%);
 }
 :where(.dark) .bg-green-50 {
-  background-color: hsl(142 50% 10%);
+  background-color: hsl(142 35% 17%);
 }
 :where(.dark) .bg-red-50 {
-  background-color: hsl(0 50% 12%);
+  background-color: hsl(0 35% 20%);
 }
 :where(.dark) .bg-orange-50 {
-  background-color: hsl(25 50% 12%);
+  background-color: hsl(25 35% 20%);
 }
 :where(.dark) .bg-orange-100 {
-  background-color: hsl(25 50% 15%);
+  background-color: hsl(25 35% 23%);
 }
 :where(.dark) .bg-amber-50 {
-  background-color: hsl(45 50% 12%);
+  background-color: hsl(45 35% 20%);
 }
 :where(.dark) .bg-amber-100 {
-  background-color: hsl(45 50% 15%);
+  background-color: hsl(45 35% 23%);
 }
 :where(.dark) .bg-purple-50 {
-  background-color: hsl(270 50% 12%);
+  background-color: hsl(270 35% 20%);
 }
 :where(.dark) .bg-pink-50 {
-  background-color: hsl(330 50% 12%);
+  background-color: hsl(330 35% 20%);
 }
 :where(.dark) .bg-sky-50 {
-  background-color: hsl(200 50% 12%);
+  background-color: hsl(200 35% 20%);
 }
 
 /* Texto slate oscuro → claro */
 :where(.dark) .text-slate-900 {
-  color: hsl(210 40% 94%);
+  color: hsl(220 20% 92%);
 }
 :where(.dark) .text-slate-800 {
-  color: hsl(210 40% 88%);
+  color: hsl(220 18% 85%);
 }
 :where(.dark) .text-slate-700 {
-  color: hsl(215 20% 78%);
+  color: hsl(220 14% 76%);
 }
 :where(.dark) .text-slate-600 {
-  color: hsl(215 20% 68%);
+  color: hsl(220 12% 66%);
 }
 :where(.dark) .text-slate-500 {
-  color: hsl(215 20% 56%);
+  color: hsl(220 10% 55%);
 }
 :where(.dark) .text-slate-400 {
-  color: hsl(215 20% 48%);
+  color: hsl(220 8% 48%);
 }
 
 /* Borders */
 :where(.dark) .border-slate-100 {
-  border-color: hsl(217.2 32.6% 20%);
+  border-color: hsl(220 16% 24%);
 }
 :where(.dark) .border-slate-200 {
-  border-color: hsl(217.2 32.6% 22%);
+  border-color: hsl(220 16% 26%);
 }
 :where(.dark) .border-slate-300 {
-  border-color: hsl(217.2 32.6% 28%);
+  border-color: hsl(220 16% 30%);
 }
 :where(.dark) .border-orange-200 {
   border-color: hsl(25 40% 28%);
@@ -248,16 +247,16 @@
 
 /* Hover states */
 :where(.dark) .hover\:bg-slate-50:hover {
-  background-color: hsl(217.2 32.6% 14%);
+  background-color: hsl(220 16% 22%);
 }
 :where(.dark) .hover\:bg-slate-100:hover {
-  background-color: hsl(217.2 32.6% 17%);
+  background-color: hsl(220 16% 25%);
 }
 :where(.dark) .hover\:bg-blue-50:hover {
-  background-color: hsl(217 50% 15%);
+  background-color: hsl(217 40% 23%);
 }
 :where(.dark) .hover\:bg-orange-50:hover {
-  background-color: hsl(25 50% 15%);
+  background-color: hsl(25 35% 23%);
 }
 
 /* Inputs y controles de formulario nativos */
@@ -265,7 +264,7 @@
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
 :where(.dark) textarea,
 :where(.dark) select {
-  background-color: hsl(217.2 32.6% 14%);
+  background-color: hsl(220 16% 22%);
   color: hsl(var(--foreground));
   border-color: hsl(var(--border));
 }
