@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: write
-      
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,17 +25,21 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '24'
+          cache: 'npm'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
       - name: Install frontend dependencies
-        run: |
-          npm uninstall better-sqlite3 mdb-reader
-          npm install
+        run: npm ci --legacy-peer-deps
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -44,6 +48,6 @@ jobs:
         with:
           tagName: sagim-v__VERSION__
           releaseName: "SAGIM Windows v__VERSION__"
-          releaseBody: "Instalador de Windows (.exe) generado automáticamente."
+          releaseBody: "Instalador de Windows (.exe/.msi) generado automáticamente."
           releaseDraft: false
           prerelease: false
