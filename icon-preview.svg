@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="sGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="60%" style="stop-color:#bfdbfe"/>
+      <stop offset="100%" style="stop-color:#60a5fa"/>
+    </linearGradient>
+    <filter id="softGlow">
+      <feDropShadow dx="0" dy="0" stdDeviation="28" flood-color="#3b82f6" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+
+  <!-- S centrada -->
+  <g filter="url(#softGlow)" transform="translate(512, 512)">
+    <text
+      x="0" y="0"
+      font-family="'SF Pro Display','Helvetica Neue',Arial,sans-serif"
+      font-size="700"
+      font-weight="800"
+      fill="url(#sGrad)"
+      text-anchor="middle"
+      dominant-baseline="central"
+    >S</text>
+  </g>
+</svg>
