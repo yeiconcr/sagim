@@ -25,14 +25,6 @@ export async function getDb(): Promise<Database> {
 export async function initDatabase(): Promise<void> {
   db = await Database.load('sqlite:sagim.db');
 
-  // Configurar SQLite para evitar "database is locked" bajo carga concurrente:
-  // WAL mode: lectores y escritores no se bloquean entre sí.
-  // busy_timeout: esperar hasta 5 segundos antes de lanzar SQLITE_BUSY.
-  // synchronous=NORMAL: balance entre seguridad y rendimiento en WAL.
-  await db.execute('PRAGMA journal_mode=WAL');
-  await db.execute('PRAGMA busy_timeout=5000');
-  await db.execute('PRAGMA synchronous=NORMAL');
-
   // Crear todas las tablas
   await createTables(db);
 
