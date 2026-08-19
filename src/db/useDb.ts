@@ -97,15 +97,25 @@ export async function dbExecute(
  *
  * Serializa llamadas concurrentes con una cola para evitar que dos
  * transacciones simultáneas generen "database is locked" (SQLITE_BUSY).
+ *
+ * IMPORTANTE: la cola siempre avanza aunque una transacción falle,
+ * usando .catch(() => {}) sobre el slot de la cola — el error se
+ * propaga al llamador por la promesa individual, no por la cola.
  */
 let _txQueue: Promise<void> = Promise.resolve();
 
-export async function dbTransaction(
+export function dbTransaction(
   operations: Array<{ sql: string; params?: unknown[] }>
 ): Promise<void> {
-  // Encolar esta transacción detrás de la anterior para serializarlas.
-  _txQueue = _txQueue.then(() => _runTransaction(operations));
-  return _txQueue;
+  // Crear la promesa de esta transacción encadenada detrás de la cola actual.
+  const txPromise = _txQueue.then(() => _runTransaction(operations));
+
+  // Avanzar la cola ignorando el resultado (éxito o error) de esta transacción,
+  // para que la siguiente en la cola siempre pueda ejecutarse.
+  _txQueue = txPromise.catch(() => {});
+
+  // Retornar la promesa real al llamador para que reciba el error si lo hay.
+  return txPromise;
 }
 
 async function _runTransaction(
@@ -119,7 +129,11 @@ async function _runTransaction(
     }
     await db.execute('COMMIT');
   } catch (err) {
-    await db.execute('ROLLBACK');
+    try {
+      await db.execute('ROLLBACK');
+    } catch {
+      // Ignorar error de ROLLBACK si la conexión ya estaba limpia
+    }
     throw err;
   }
 }
