@@ -107,9 +107,9 @@ export function DataTable<TData, TValue = unknown>({
       )}
 
       {/* Tabla */}
-      <div className="flex-1 overflow-auto rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-0">
+      <div className="flex-1 overflow-auto rounded-2xl border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-0 dark:border-slate-700/50 dark:bg-slate-900 dark:shadow-none">
         <table className="w-full text-sm">
-          <thead className="bg-white border-b border-slate-100 sticky top-0 z-10">
+          <thead className="bg-white border-b border-slate-100 sticky top-0 z-10 dark:bg-slate-900 dark:border-slate-700/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -120,8 +120,8 @@ export function DataTable<TData, TValue = unknown>({
                       key={header.id}
                       colSpan={header.colSpan}
                       className={cn(
-                        'h-12 px-4 text-left text-[13px] font-semibold text-slate-500 whitespace-nowrap select-none',
-                        canSort && 'cursor-pointer hover:text-slate-800'
+                        'h-12 px-4 text-left text-[13px] font-semibold text-slate-500 whitespace-nowrap select-none dark:text-slate-400',
+                        canSort && 'cursor-pointer hover:text-slate-800 dark:hover:text-slate-200'
                       )}
                       style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                       onClick={header.column.getToggleSortingHandler()}
@@ -171,14 +171,17 @@ export function DataTable<TData, TValue = unknown>({
                   key={row.id}
                   onClick={() => onRowClick?.(row.original)}
                   className={cn(
-                    'border-b border-slate-50/80 transition-colors duration-200',
+                    'border-b border-slate-50/80 transition-colors duration-200 dark:border-slate-700/30',
                     onRowClick
-                      ? 'cursor-pointer hover:bg-slate-50/80 active:bg-slate-100/80'
-                      : 'hover:bg-slate-50/40'
+                      ? 'cursor-pointer hover:bg-slate-50/80 active:bg-slate-100/80 dark:hover:bg-slate-800/60 dark:active:bg-slate-700/60'
+                      : 'hover:bg-slate-50/40 dark:hover:bg-slate-800/30'
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3.5 text-slate-700 whitespace-nowrap">
+                    <td
+                      key={cell.id}
+                      className="px-4 py-3.5 text-slate-700 whitespace-nowrap dark:text-slate-300"
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

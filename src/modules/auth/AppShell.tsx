@@ -367,7 +367,7 @@ const Topbar = memo(function Topbar({
   onIrProcesos,
 }: TopbarProps) {
   return (
-    <header className="flex items-center justify-between h-14 px-4 border-b bg-white flex-shrink-0 shadow-sm relative z-10">
+    <header className="flex items-center justify-between h-14 px-4 border-b bg-white flex-shrink-0 shadow-sm relative z-10 dark:bg-slate-950 dark:border-slate-700/50 dark:shadow-none">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -521,7 +521,7 @@ export function AppShell() {
           onIrProcesos={handleIrProcesos}
         />
 
-        <main className="flex-1 min-h-0 overflow-hidden bg-slate-50 relative z-0">
+        <main className="flex-1 min-h-0 overflow-hidden bg-slate-50 relative z-0 dark:bg-slate-950">
           <ModuleRenderer modulo={moduloActivo} />
         </main>
       </div>
