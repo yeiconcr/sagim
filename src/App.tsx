@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
 import { Toaster } from '@/components/shared/Toaster';
 import { LoginScreen } from '@/modules/auth/LoginScreen';
 import { AppShell } from '@/modules/auth/AppShell';
@@ -8,29 +9,32 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { initDatabase } from '@/db/database';
 import { startAutoBackup } from '@/lib/backup';
 import { initLogger, logger } from '@/lib/logger';
-
 import { hexToHsl } from '@/lib/utils';
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+  const { darkMode, zoom, setDarkMode, setZoom } = useThemeStore();
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState<string | null>(null);
+
+  // Aplicar tema y zoom guardados al arrancar
+  useEffect(() => {
+    setDarkMode(darkMode);
+    setZoom(zoom);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function initialize() {
       try {
-        // Inicializar logger primero
         await initLogger('info');
         logger.info('App', 'Iniciando SAGIM...');
 
         await initDatabase();
         logger.info('App', 'Base de datos inicializada');
 
-        // Iniciar backup automático (cada 4 horas)
         startAutoBackup(4);
         logger.info('App', 'Backup automático configurado');
 
-        // Load custom color
         const { getParametros } = await import('@/db/queries/configuracion');
         const p = await getParametros();
         if (p?.color_primario) {

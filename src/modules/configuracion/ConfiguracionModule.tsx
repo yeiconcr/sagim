@@ -1,8 +1,9 @@
-import { Settings, Users, HardDrive } from 'lucide-react';
+import { Settings, Users, HardDrive, Palette } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ParametrosTab } from './ParametrosTab';
 import { UsuariosTab } from './UsuariosTab';
 import { BackupTab } from './BackupTab';
+import { AparienciaTab } from './AparienciaTab';
 import { PageHeader } from '@/components/shared/PageHeader';
 
 export function ConfiguracionModule() {
@@ -25,6 +26,10 @@ export function ConfiguracionModule() {
               <Users className="w-3.5 h-3.5" />
               Usuarios
             </TabsTrigger>
+            <TabsTrigger value="apariencia" className="gap-1.5">
+              <Palette className="w-3.5 h-3.5" />
+              Apariencia
+            </TabsTrigger>
             <TabsTrigger value="backup" className="gap-1.5">
               <HardDrive className="w-3.5 h-3.5" />
               Backup
@@ -36,6 +41,9 @@ export function ConfiguracionModule() {
           </TabsContent>
           <TabsContent value="usuarios" className="flex-1 mt-4 pb-6">
             <UsuariosTab />
+          </TabsContent>
+          <TabsContent value="apariencia" className="flex-1 mt-4 pb-6">
+            <AparienciaTab />
           </TabsContent>
           <TabsContent value="backup" className="flex-1 mt-4 pb-6">
             <BackupTab />
