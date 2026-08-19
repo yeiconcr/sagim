@@ -939,7 +939,7 @@ export function ReportesModule() {
                       <button
                         key={r.id}
                         onClick={() => seleccionarReporte(r)}
-                        className="group relative flex flex-col text-left p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden w-full min-w-0"
+                        className="group relative flex flex-col text-left p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/50 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden w-full min-w-0"
                       >
                         <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
@@ -1202,7 +1202,7 @@ function PdfPreview({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white flex-shrink-0 sagim-no-print">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-white dark:bg-slate-950 dark:border-slate-700/50 flex-shrink-0 sagim-no-print">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onVolver}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />

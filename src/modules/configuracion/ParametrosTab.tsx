@@ -128,7 +128,7 @@ export function ParametrosTab() {
   return (
     <div className="overflow-y-auto flex-1 min-h-0">
       <div className="max-w-4xl space-y-6 pb-6">
-        <div className="flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm sticky top-0 z-10">
+        <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-lg border dark:border-slate-700/50 shadow-sm sticky top-0 z-10">
           <div>
             <h2 className="text-lg font-bold text-slate-800">Configuración General</h2>
             <p className="text-sm text-slate-500">
@@ -178,7 +178,7 @@ export function ParametrosTab() {
                   value={nombreGimnasio}
                   onChange={(e) => setNombreGimnasio(e.target.value.toUpperCase())}
                   disabled={!editando}
-                  className={!editando ? 'bg-slate-50' : ''}
+                  className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                 />
               </FormField>
               <FormField label="NIT / RUT" htmlFor="p-nit">
@@ -187,7 +187,7 @@ export function ParametrosTab() {
                   value={nit}
                   onChange={(e) => setNit(e.target.value)}
                   disabled={!editando}
-                  className={!editando ? 'bg-slate-50' : ''}
+                  className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                 />
               </FormField>
               <FormField label="Teléfono" htmlFor="p-tel">
@@ -196,7 +196,7 @@ export function ParametrosTab() {
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   disabled={!editando}
-                  className={!editando ? 'bg-slate-50' : ''}
+                  className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                 />
               </FormField>
               <FormField label="Dirección" htmlFor="p-dir" className="col-span-2">
@@ -205,7 +205,7 @@ export function ParametrosTab() {
                   value={direccion}
                   onChange={(e) => setDireccion(e.target.value)}
                   disabled={!editando}
-                  className={!editando ? 'bg-slate-50' : ''}
+                  className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                 />
               </FormField>
               <div className="col-span-2 mt-2">
@@ -278,7 +278,7 @@ export function ParametrosTab() {
                     value={formatoImpresora}
                     onChange={(e) => setFormatoImpresora(e.target.value)}
                     disabled={!editando}
-                    className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm dark:text-slate-100"
                   >
                     <option value="POS-80">Tickets (80mm)</option>
                     <option value="POS-58">Tickets (58mm)</option>
@@ -294,7 +294,7 @@ export function ParametrosTab() {
                     value={ivaDefecto}
                     onChange={(e) => setIvaDefecto(Number(e.target.value))}
                     disabled={!editando}
-                    className={!editando ? 'bg-slate-50' : ''}
+                    className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                   />
                 </FormField>
               </div>
@@ -323,7 +323,7 @@ export function ParametrosTab() {
                     value={diasInactivar}
                     onChange={(e) => setDiasInactivar(Number(e.target.value))}
                     disabled={!editando}
-                    className={!editando ? 'bg-slate-50' : ''}
+                    className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                   />
                 </FormField>
                 <FormField label="Días de alerta vencimiento" htmlFor="p-alerta">
@@ -335,7 +335,7 @@ export function ParametrosTab() {
                     value={diasAlerta}
                     onChange={(e) => setDiasAlerta(Number(e.target.value))}
                     disabled={!editando}
-                    className={!editando ? 'bg-slate-50' : ''}
+                    className={!editando ? 'bg-slate-50 dark:bg-slate-800' : ''}
                   />
                 </FormField>
               </div>

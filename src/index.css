@@ -150,6 +150,169 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════
+   DARK MODE — remap global de clases utilitarias
+   Tailwind genera las clases dark: solo para las que
+   se usan con ese prefijo. Este bloque cubre todos los
+   colores hardcodeados en los módulos que no tienen dark:.
+   ══════════════════════════════════════════════════════ */
+
+/* Fondos blancos y slate claros */
+:where(.dark) .bg-white {
+  background-color: hsl(222.2 47.4% 10%);
+}
+:where(.dark) .bg-slate-50 {
+  background-color: hsl(222.2 47.4% 9%);
+}
+:where(.dark) .bg-slate-100 {
+  background-color: hsl(217.2 32.6% 14%);
+}
+:where(.dark) .bg-slate-200 {
+  background-color: hsl(217.2 32.6% 18%);
+}
+
+/* Colores semánticos claros → versiones oscuras */
+:where(.dark) .bg-blue-50 {
+  background-color: hsl(217 50% 12%);
+}
+:where(.dark) .bg-indigo-50 {
+  background-color: hsl(240 50% 12%);
+}
+:where(.dark) .bg-emerald-50 {
+  background-color: hsl(152 50% 10%);
+}
+:where(.dark) .bg-green-50 {
+  background-color: hsl(142 50% 10%);
+}
+:where(.dark) .bg-red-50 {
+  background-color: hsl(0 50% 12%);
+}
+:where(.dark) .bg-orange-50 {
+  background-color: hsl(25 50% 12%);
+}
+:where(.dark) .bg-orange-100 {
+  background-color: hsl(25 50% 15%);
+}
+:where(.dark) .bg-amber-50 {
+  background-color: hsl(45 50% 12%);
+}
+:where(.dark) .bg-amber-100 {
+  background-color: hsl(45 50% 15%);
+}
+:where(.dark) .bg-purple-50 {
+  background-color: hsl(270 50% 12%);
+}
+:where(.dark) .bg-pink-50 {
+  background-color: hsl(330 50% 12%);
+}
+:where(.dark) .bg-sky-50 {
+  background-color: hsl(200 50% 12%);
+}
+
+/* Texto slate oscuro → claro */
+:where(.dark) .text-slate-900 {
+  color: hsl(210 40% 94%);
+}
+:where(.dark) .text-slate-800 {
+  color: hsl(210 40% 88%);
+}
+:where(.dark) .text-slate-700 {
+  color: hsl(215 20% 78%);
+}
+:where(.dark) .text-slate-600 {
+  color: hsl(215 20% 68%);
+}
+:where(.dark) .text-slate-500 {
+  color: hsl(215 20% 56%);
+}
+:where(.dark) .text-slate-400 {
+  color: hsl(215 20% 48%);
+}
+
+/* Borders */
+:where(.dark) .border-slate-100 {
+  border-color: hsl(217.2 32.6% 20%);
+}
+:where(.dark) .border-slate-200 {
+  border-color: hsl(217.2 32.6% 22%);
+}
+:where(.dark) .border-slate-300 {
+  border-color: hsl(217.2 32.6% 28%);
+}
+:where(.dark) .border-orange-200 {
+  border-color: hsl(25 40% 28%);
+}
+:where(.dark) .border-orange-400 {
+  border-color: hsl(25 60% 40%);
+}
+
+/* Hover states */
+:where(.dark) .hover\:bg-slate-50:hover {
+  background-color: hsl(217.2 32.6% 14%);
+}
+:where(.dark) .hover\:bg-slate-100:hover {
+  background-color: hsl(217.2 32.6% 17%);
+}
+:where(.dark) .hover\:bg-blue-50:hover {
+  background-color: hsl(217 50% 15%);
+}
+:where(.dark) .hover\:bg-orange-50:hover {
+  background-color: hsl(25 50% 15%);
+}
+
+/* Inputs y controles de formulario nativos */
+:where(.dark)
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:where(.dark) textarea,
+:where(.dark) select {
+  background-color: hsl(217.2 32.6% 14%);
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+/* Texto de colores semánticos — ajustar luminosidad en oscuro */
+:where(.dark) .text-orange-700 {
+  color: hsl(25 90% 65%);
+}
+:where(.dark) .text-orange-600 {
+  color: hsl(25 90% 60%);
+}
+:where(.dark) .text-amber-700 {
+  color: hsl(45 90% 65%);
+}
+:where(.dark) .text-emerald-700 {
+  color: hsl(152 60% 55%);
+}
+:where(.dark) .text-red-700 {
+  color: hsl(0 80% 65%);
+}
+:where(.dark) .text-blue-700 {
+  color: hsl(217 80% 70%);
+}
+:where(.dark) .text-indigo-700 {
+  color: hsl(240 70% 70%);
+}
+
+/* Gradientes claros */
+:where(.dark) .from-blue-50 {
+  --tw-gradient-from: hsl(217 50% 12%);
+}
+:where(.dark) .from-indigo-50 {
+  --tw-gradient-from: hsl(240 50% 12%);
+}
+:where(.dark) .from-emerald-50 {
+  --tw-gradient-from: hsl(152 50% 10%);
+}
+:where(.dark) .to-slate-100\/50 {
+  --tw-gradient-to: hsl(217.2 32.6% 12% / 0.5);
+}
+:where(.dark) .to-indigo-100\/50 {
+  --tw-gradient-to: hsl(240 50% 15% / 0.5);
+}
+:where(.dark) .to-emerald-100\/50 {
+  --tw-gradient-to: hsl(152 50% 13% / 0.5);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;

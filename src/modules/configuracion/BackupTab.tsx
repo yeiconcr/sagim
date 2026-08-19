@@ -115,14 +115,16 @@ export function BackupTab() {
       <Card className="border-orange-200">
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-              <Upload className="w-6 h-6 text-orange-600" />
+            <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+              <Upload className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-800 mb-1">Restaurar desde Backup</h3>
-              <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">
+                Restaurar desde Backup
+              </h3>
+              <div className="flex items-start gap-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/50 rounded-lg p-3 mb-4">
                 <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-orange-700">
+                <p className="text-xs text-orange-700 dark:text-orange-300">
                   <strong>Atención:</strong> Esta operación reemplazará TODOS los datos actuales con
                   el backup seleccionado. Los datos actuales serán guardados automáticamente como
                   respaldo antes de restaurar. Reinicie la aplicación después de restaurar.
@@ -130,7 +132,7 @@ export function BackupTab() {
               </div>
               <Button
                 variant="outline"
-                className="border-orange-400 text-orange-600 hover:bg-orange-50"
+                className="border-orange-400 text-orange-600 dark:text-orange-400 dark:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
                 onClick={handleRecuperar}
               >
                 <Upload className="w-4 h-4 mr-1.5" />

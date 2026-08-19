@@ -911,7 +911,7 @@ export function RecepcionModule() {
               onKeyDown={handleKeyDown}
               placeholder="Cédula, número de inscripción o nombre..."
               className={cn(
-                'pl-14 h-14 text-lg rounded-2xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-visible:ring-blue-500/50 bg-white transition-all',
+                'pl-14 h-14 text-lg rounded-2xl border-0 shadow-[0_8px_30px_rgb(0,0,0,0.06)] focus-visible:ring-blue-500/50 bg-white dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 transition-all',
                 noEncontrado && 'ring-2 ring-red-400'
               )}
               autoComplete="off"
@@ -1099,7 +1099,7 @@ export function RecepcionModule() {
                   <button
                     key={r.cedula}
                     onClick={() => handleSeleccionarReciente(r.cedula)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors text-sm dark:text-slate-200"
                   >
                     <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
                       <FotoCliente
@@ -1124,21 +1124,21 @@ export function RecepcionModule() {
                   title: 'Buscar cliente',
                   desc: 'Ingrese la cédula, número de inscripción o nombre',
                   color: 'text-blue-500',
-                  bg: 'bg-gradient-to-br from-blue-50 to-slate-100/50',
+                  bg: 'bg-gradient-to-br from-blue-50 to-slate-100/50 dark:from-blue-950/40 dark:to-slate-800/40',
                 },
                 {
                   icon: Dumbbell,
                   title: 'Ventas Gym',
                   desc: 'Registre pagos de membresías y servicios',
                   color: 'text-indigo-500',
-                  bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/50',
+                  bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/40 dark:to-slate-800/40',
                 },
                 {
                   icon: Store,
                   title: 'Ventas Tienda',
                   desc: 'Venda suplementos, ropa y artículos',
                   color: 'text-emerald-500',
-                  bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/50',
+                  bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/40 dark:to-slate-800/40',
                 },
               ].map((item) => (
                 <Card key={item.title} className="border-0 bg-transparent overflow-hidden">
