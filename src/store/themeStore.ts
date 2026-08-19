@@ -43,14 +43,21 @@ function applyDark(val: boolean) {
   document.documentElement.classList.toggle('dark', val);
 }
 
-async function applyZoom(val: number) {
-  try {
-    // Tauri: zoom nativo del WebView
-    const { getCurrentWebview } = await import('@tauri-apps/api/webview');
-    await getCurrentWebview().setZoom(val);
-  } catch {
-    // Fallback para dev en navegador
-    document.documentElement.style.zoom = String(val);
+function applyZoom(val: number) {
+  const root = document.getElementById('root');
+  if (!root) return;
+  if (val === 1) {
+    root.style.transform = '';
+    root.style.width = '';
+    root.style.height = '';
+    root.style.transformOrigin = '';
+  } else {
+    // Escalar el contenido y compensar el espacio sobrante
+    // para que llene exactamente el viewport sin dejar áreas vacías
+    root.style.transformOrigin = 'top left';
+    root.style.transform = `scale(${val})`;
+    root.style.width = `${(1 / val) * 100}%`;
+    root.style.height = `${(1 / val) * 100}vh`;
   }
 }
 

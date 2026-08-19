@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @plugin "tailwindcss-animate";
 
+/* Tailwind v4: activar modo oscuro por clase .dark en el elemento html */
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
