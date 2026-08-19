@@ -4,21 +4,21 @@
  * La BD se almacena en el directorio de datos de la app (gestionado por Tauri).
  */
 
-import Database from "@tauri-apps/plugin-sql";
+import Database from '@tauri-apps/plugin-sql';
 
 let db: Database | null = null;
 
 export async function getDb(): Promise<Database> {
   if (!db) {
-    throw new Error("Base de datos no inicializada. Llame initDatabase() primero.");
+    throw new Error('Base de datos no inicializada. Llame initDatabase() primero.');
   }
   return db;
 }
 
 export async function initDatabase(): Promise<void> {
-  console.log("[SAGIM] Conectando a base de datos SQLite...");
+  console.log('[SAGIM] Conectando a base de datos SQLite...');
 
-  db = await Database.load("sqlite:sagim.db");
+  db = await Database.load('sqlite:sagim.db');
 
   // Crear todas las tablas
   await createTables(db);
@@ -26,7 +26,7 @@ export async function initDatabase(): Promise<void> {
   // Insertar datos semilla si es primera vez
   await seedInitialData(db);
 
-  console.log("[SAGIM] Base de datos inicializada correctamente — 24 tablas");
+  console.log('[SAGIM] Base de datos inicializada correctamente — 24 tablas');
 }
 
 async function createTables(db: Database): Promise<void> {
@@ -108,6 +108,7 @@ async function createTables(db: Database): Promise<void> {
       telefono TEXT,
       celular TEXT,
       email TEXT,
+      fecha_nacimiento TEXT,
       id_especialidad INTEGER,
       tarifa REAL NOT NULL DEFAULT 0,
       estado TEXT NOT NULL DEFAULT 'A'
@@ -193,6 +194,7 @@ async function createTables(db: Database): Promise<void> {
       hora TEXT,
       cedula TEXT,
       inscripcion INTEGER,
+      id_forma_pago INTEGER,
       observaciones TEXT,
       valor_letras TEXT,
       estado TEXT NOT NULL DEFAULT 'A',
@@ -385,6 +387,16 @@ async function createTables(db: Database): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_pagos_ins_instructor ON pagos_ins(id_instructor)`,
     `CREATE INDEX IF NOT EXISTS idx_pagos_ins_fecha ON pagos_ins(fecha_pag)`,
 
+    // Tabla relación muchos a muchos: instructores <-> especialidades
+    `CREATE TABLE IF NOT EXISTS instructor_especialidades (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_instructor INTEGER NOT NULL,
+      id_especialidad INTEGER NOT NULL,
+      UNIQUE(id_instructor, id_especialidad)
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_inst_esp_instructor ON instructor_especialidades(id_instructor)`,
+    `CREATE INDEX IF NOT EXISTS idx_inst_esp_especialidad ON instructor_especialidades(id_especialidad)`,
+
     // Tabla de asistencias (registro de entradas al gym)
     `CREATE TABLE IF NOT EXISTS asistencias (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -421,12 +433,18 @@ async function createTables(db: Database): Promise<void> {
 
   // --- MIGRACIONES MANUALES (Para bases de datos existentes) ---
   const newColumns = [
-    "ALTER TABLE parametros ADD COLUMN mensaje_recibo TEXT",
-    "ALTER TABLE parametros ADD COLUMN texto_resolucion TEXT",
+    'ALTER TABLE parametros ADD COLUMN mensaje_recibo TEXT',
+    'ALTER TABLE parametros ADD COLUMN texto_resolucion TEXT',
     "ALTER TABLE parametros ADD COLUMN formato_impresora TEXT NOT NULL DEFAULT 'POS-80'",
     "ALTER TABLE parametros ADD COLUMN color_primario TEXT NOT NULL DEFAULT '#1e40af'",
-    "ALTER TABLE parametros ADD COLUMN iva_por_defecto REAL NOT NULL DEFAULT 0",
-    "ALTER TABLE parametros ADD COLUMN permitir_sin_stock INTEGER NOT NULL DEFAULT 1",
+    'ALTER TABLE parametros ADD COLUMN iva_por_defecto REAL NOT NULL DEFAULT 0',
+    'ALTER TABLE parametros ADD COLUMN permitir_sin_stock INTEGER NOT NULL DEFAULT 1',
+    'ALTER TABLE instructores ADD COLUMN fecha_nacimiento TEXT',
+    // Agrega forma de pago al recibo gym para cuadre de caja por método
+    'ALTER TABLE recibos ADD COLUMN id_forma_pago INTEGER',
+    // NOTA: cuotas_cli.id_cliente fue reportado como TEXT(10) en la BD Access original.
+    // En SQLite, TEXT(N) NO enforce longitud — almacena el valor completo sin truncar.
+    // El schema actual ya usa TEXT sin tamaño límite, no se requiere migración.
   ];
   for (const alter of newColumns) {
     try {
@@ -435,11 +453,133 @@ async function createTables(db: Database): Promise<void> {
       // Ignorar el error si la columna ya existe
     }
   }
+
+  // --- LIMPIEZA DE DATOS INCORRECTOS EN INSTRUCTORES ---
+  // Limpiar emails que no son emails válidos (ej: "Falta fecha cumpleaños")
+  try {
+    await db.execute(`
+      UPDATE instructores 
+      SET email = NULL 
+      WHERE email IS NOT NULL 
+        AND email NOT LIKE '%@%'
+    `);
+    console.log('[SAGIM] Emails inválidos en instructores limpiados');
+  } catch (e) {
+    console.error('[SAGIM] Error limpiando emails inválidos:', e);
+  }
+
+  // --- LIMPIEZA DE DUPLICADOS ---
+  await cleanDuplicates(db);
+}
+
+/**
+ * Limpia registros duplicados en tablas de catálogos.
+ * Mantiene el registro con ID más bajo y elimina o renombra los demás.
+ */
+async function cleanDuplicates(db: Database): Promise<void> {
+  // 1. Limpiar especialidades duplicadas por nombre (case-insensitive)
+  const espDuplicadas = await db.select<{ nombre: string; cnt: number }[]>(
+    `SELECT LOWER(nombre) as nombre, COUNT(*) as cnt 
+     FROM especialidades 
+     GROUP BY LOWER(nombre) 
+     HAVING COUNT(*) > 1`
+  );
+
+  for (const dup of espDuplicadas) {
+    // Obtener todos los IDs con este nombre
+    const registros = await db.select<{ id: number }[]>(
+      `SELECT id FROM especialidades WHERE LOWER(nombre) = ? ORDER BY id ASC`,
+      [dup.nombre]
+    );
+    // Mantener el primero, eliminar el resto (si no están en uso)
+    for (let i = 1; i < registros.length; i++) {
+      const enUso = await db.select<{ c: number }[]>(
+        `SELECT COUNT(*) as c FROM instructor_especialidades WHERE id_especialidad = ?`,
+        [registros[i].id]
+      );
+      if ((enUso[0]?.c ?? 0) === 0) {
+        await db.execute(`DELETE FROM especialidades WHERE id = ?`, [registros[i].id]);
+        console.log(`[SAGIM] Especialidad duplicada eliminada: ID ${registros[i].id}`);
+      } else {
+        // Si está en uso, renombrar agregando sufijo
+        await db.execute(
+          `UPDATE especialidades SET nombre = nombre || ' (DUP-' || id || ')' WHERE id = ?`,
+          [registros[i].id]
+        );
+        console.log(`[SAGIM] Especialidad duplicada renombrada: ID ${registros[i].id}`);
+      }
+    }
+  }
+
+  // 2. Limpiar formas de pago duplicadas por detalle (case-insensitive)
+  const fpDuplicadas = await db.select<{ detalle: string; cnt: number }[]>(
+    `SELECT LOWER(detalle) as detalle, COUNT(*) as cnt 
+     FROM forma_pago 
+     GROUP BY LOWER(detalle) 
+     HAVING COUNT(*) > 1`
+  );
+
+  for (const dup of fpDuplicadas) {
+    const registros = await db.select<{ id: number }[]>(
+      `SELECT id FROM forma_pago WHERE LOWER(detalle) = ? ORDER BY id ASC`,
+      [dup.detalle]
+    );
+    for (let i = 1; i < registros.length; i++) {
+      // Verificar si está en uso en recibos gym, factu_tienda o compras
+      const enUsoGym = await db.select<{ c: number }[]>(
+        `SELECT COUNT(*) as c FROM recibos WHERE id_forma_pago = ?`,
+        [registros[i].id]
+      );
+      const enUsoTienda = await db.select<{ c: number }[]>(
+        `SELECT COUNT(*) as c FROM factu_tienda WHERE id_forma_pago = ?`,
+        [registros[i].id]
+      );
+      const enUsoCompras = await db.select<{ c: number }[]>(
+        `SELECT COUNT(*) as c FROM compras WHERE id_forma_pago = ?`,
+        [registros[i].id]
+      );
+
+      const totalEnUso =
+        (enUsoGym[0]?.c ?? 0) + (enUsoTienda[0]?.c ?? 0) + (enUsoCompras[0]?.c ?? 0);
+
+      if (totalEnUso === 0) {
+        await db.execute(`DELETE FROM forma_pago WHERE id = ?`, [registros[i].id]);
+        console.log(`[SAGIM] Forma de pago duplicada eliminada: ID ${registros[i].id}`);
+      } else {
+        await db.execute(
+          `UPDATE forma_pago SET detalle = detalle || ' (DUP-' || id || ')' WHERE id = ?`,
+          [registros[i].id]
+        );
+        console.log(`[SAGIM] Forma de pago duplicada renombrada: ID ${registros[i].id}`);
+      }
+    }
+  }
+
+  console.log('[SAGIM] Limpieza de duplicados completada');
+
+  // 3. Crear índices únicos para prevenir futuros duplicados
+  const uniqueIndexes = [
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_especialidades_nombre_unique 
+     ON especialidades(LOWER(nombre))`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_forma_pago_detalle_unique 
+     ON forma_pago(LOWER(detalle))`,
+  ];
+
+  for (const idx of uniqueIndexes) {
+    try {
+      await db.execute(idx);
+    } catch (e) {
+      // Si falla es porque aún hay duplicados - loguear para debug
+      console.warn('[SAGIM] No se pudo crear índice único:', e);
+    }
+  }
+
+  console.log('[SAGIM] Índices únicos verificados');
 }
 
 async function seedInitialData(db: Database): Promise<void> {
   // Parámetros iniciales
-  const params = await db.select<[{ c: number }]>("SELECT COUNT(*) as c FROM parametros");
+  const params = await db.select<[{ c: number }]>('SELECT COUNT(*) as c FROM parametros');
   if (params[0].c === 0) {
     await db.execute(
       `INSERT INTO parametros (nombre_gimnasio, nit, direccion, telefono,
@@ -450,26 +590,26 @@ async function seedInitialData(db: Database): Promise<void> {
   }
 
   // Formas de pago semilla
-  const formas = await db.select<[{ c: number }]>("SELECT COUNT(*) as c FROM forma_pago");
+  const formas = await db.select<[{ c: number }]>('SELECT COUNT(*) as c FROM forma_pago');
   if (formas[0].c === 0) {
     const formasData = [
-      ["Efectivo", 0],
-      ["Tarjeta Débito", 0],
-      ["Tarjeta Crédito", 30],
-      ["Transferencia", 0],
-      ["Crédito 30 días", 30],
-      ["Crédito 60 días", 60],
+      ['Efectivo', 0],
+      ['Tarjeta Débito', 0],
+      ['Tarjeta Crédito', 30],
+      ['Transferencia', 0],
+      ['Crédito 30 días', 30],
+      ['Crédito 60 días', 60],
     ];
     for (const [detalle, plazo] of formasData) {
-      await db.execute(
-        "INSERT INTO forma_pago (detalle, plazo_dias) VALUES ($1, $2)",
-        [detalle, plazo]
-      );
+      await db.execute('INSERT INTO forma_pago (detalle, plazo_dias) VALUES ($1, $2)', [
+        detalle,
+        plazo,
+      ]);
     }
   }
 
   // Usuario admin por defecto
-  const users = await db.select<[{ c: number }]>("SELECT COUNT(*) as c FROM usuarios");
+  const users = await db.select<[{ c: number }]>('SELECT COUNT(*) as c FROM usuarios');
   if (users[0].c === 0) {
     // Hash bcrypt de 'sagim123' con salt rounds=10
     await db.execute(

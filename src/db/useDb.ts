@@ -3,8 +3,8 @@
  * Envuelve las queries con manejo de estado (loading/error/data).
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { getDb } from "./database";
+import { useState, useEffect, useCallback } from 'react';
+import { getDb } from './database';
 
 interface QueryState<T> {
   data: T | null;
@@ -17,10 +17,7 @@ interface QueryState<T> {
  * Hook para ejecutar una query SELECT y obtener resultados reactivos.
  * Se re-ejecuta automáticamente cuando cambian las dependencias.
  */
-export function useQuery<T>(
-  queryFn: () => Promise<T>,
-  deps: unknown[] = []
-): QueryState<T> {
+export function useQuery<T>(queryFn: () => Promise<T>, deps: unknown[] = []): QueryState<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +41,7 @@ export function useQuery<T>(
       })
       .catch((err) => {
         if (!cancelled) {
-          console.error("[useQuery] Error:", err);
+          console.error('[useQuery] Error:', err);
           setError(String(err));
           setLoading(false);
         }
@@ -94,33 +91,41 @@ export async function dbExecute(
 }
 
 /**
- * Ejecuta múltiples queries en secuencia.
- * NOTA: tauri-plugin-sql usa un pool de conexiones en Rust.
- * Ejecutar BEGIN TRANSACTION manual puede causar "database is locked"
- * si el pool asigna una conexión distinta para el siguiente execute.
- * Por lo tanto, ejecutamos secuencialmente con auto-commit.
+ * Ejecuta múltiples queries dentro de una transacción SQLite real.
+ * Si cualquier operación falla, hace ROLLBACK completo garantizando
+ * consistencia de datos (atomicidad).
  */
 export async function dbTransaction(
   operations: Array<{ sql: string; params?: unknown[] }>
 ): Promise<void> {
   const db = await getDb();
-  for (const op of operations) {
-    await db.execute(op.sql, op.params ?? []);
+  await db.execute('BEGIN TRANSACTION');
+  try {
+    for (const op of operations) {
+      await db.execute(op.sql, op.params ?? []);
+    }
+    await db.execute('COMMIT');
+  } catch (err) {
+    await db.execute('ROLLBACK');
+    throw err;
   }
 }
 
 /**
- * Obtiene el siguiente consecutivo y lo incrementa (atómico).
+ * Obtiene el siguiente consecutivo y lo incrementa de forma atómica.
+ * Usa UPDATE ... RETURNING para leer y escribir en una sola operación,
+ * evitando race conditions si dos procesos llaman esto simultáneamente.
  * Usar para conse_ins, conse_rec, conse_fac.
  */
 export async function getNextConsecutivo(
-  campo: "conse_ins" | "conse_rec" | "conse_fac"
+  campo: 'conse_ins' | 'conse_rec' | 'conse_fac'
 ): Promise<number> {
   const db = await getDb();
+  // UPDATE RETURNING es atómico en SQLite 3.35+
+  // Incrementa y retorna el valor ANTES del incremento en una sola operación
   const rows = await db.select<[{ val: number }]>(
-    `SELECT ${campo} as val FROM parametros LIMIT 1`
+    `UPDATE parametros SET ${campo} = ${campo} + 1 WHERE id = 1 RETURNING ${campo} - 1 as val`
   );
-  const current = rows[0]?.val ?? 1;
-  await db.execute(`UPDATE parametros SET ${campo} = ${campo} + 1`);
-  return current;
+  if (!rows[0]) throw new Error(`No se encontró registro en parametros para campo ${campo}`);
+  return rows[0].val;
 }

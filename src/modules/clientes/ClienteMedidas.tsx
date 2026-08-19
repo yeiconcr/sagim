@@ -2,37 +2,41 @@
  * ClienteMedidas — historial de medidas corporales con gráfica de evolución.
  * Equivalente a frmMedidas del VB6. Task 7.
  */
-import { useEffect, useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { ArrowLeft, Plus, Printer, TrendingUp, Scale, Ruler, Save, X, Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState, useCallback } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { ArrowLeft, Plus, Printer, TrendingUp, Scale, Ruler, Save, X, Pencil } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from "recharts";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable } from "@/components/shared/DataTable";
-import { FormField } from "@/components/shared/FormField";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { PageLoading } from "@/components/shared/LoadingSpinner";
-import { useToast } from "@/store/toastStore";
-import type { Cliente, Medida } from "@/db/types";
-import {
-  getMedidasByInscripcion, createMedida, updateMedida, deleteMedida,
-} from "@/db/queries/clientes";
-import { formatDate, today } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+import { type ColumnDef } from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '@/components/shared/DataTable';
+import { FormField } from '@/components/shared/FormField';
+import { PageLoading } from '@/components/shared/LoadingSpinner';
+import { useToast } from '@/store/toastStore';
+import type { Cliente, Medida } from '@/db/types';
+import { getMedidasByInscripcion, createMedida, updateMedida } from '@/db/queries/clientes';
+import { formatDate, today } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { DatePicker } from '@/components/shared/DatePicker';
 
 // =============================================
 // SCHEMA
 // =============================================
 const medidaSchema = z.object({
-  fecha: z.string().min(1, "La fecha es requerida"),
+  fecha: z.string().min(1, 'La fecha es requerida'),
   peso: z.coerce.number().min(0).max(500).optional(),
   talla: z.coerce.number().min(0).max(300).optional(),
   cintura: z.coerce.number().min(0).max(300).optional(),
@@ -47,15 +51,15 @@ const medidaSchema = z.object({
 type MedidaForm = z.infer<typeof medidaSchema>;
 
 const CAMPOS_MEDIDA: Array<{ key: keyof MedidaForm; label: string; icon?: React.ElementType }> = [
-  { key: "peso", label: "Peso (kg)", icon: Scale },
-  { key: "estatura", label: "Estatura (cm)", icon: Ruler },
-  { key: "talla", label: "Talla (cm)" },
-  { key: "cintura", label: "Cintura (cm)" },
-  { key: "brazos", label: "Brazos (cm)" },
-  { key: "muslos", label: "Muslos (cm)" },
-  { key: "pantorrilla", label: "Pantorrilla (cm)" },
-  { key: "torax", label: "Torax (cm)" },
-  { key: "cadera", label: "Cadera (cm)" },
+  { key: 'peso', label: 'Peso (kg)', icon: Scale },
+  { key: 'estatura', label: 'Estatura (cm)', icon: Ruler },
+  { key: 'talla', label: 'Talla (cm)' },
+  { key: 'cintura', label: 'Cintura (cm)' },
+  { key: 'brazos', label: 'Brazos (cm)' },
+  { key: 'muslos', label: 'Muslos (cm)' },
+  { key: 'pantorrilla', label: 'Pantorrilla (cm)' },
+  { key: 'torax', label: 'Torax (cm)' },
+  { key: 'cadera', label: 'Cadera (cm)' },
 ];
 
 // =============================================
@@ -72,7 +76,12 @@ function FormMedida({ inscripcion, medidaEditar, onGuardar, onCancelar }: FormMe
   const [guardando, setGuardando] = useState(false);
   const { success, error } = useToast();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<MedidaForm>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<MedidaForm>({
     resolver: zodResolver(medidaSchema),
     defaultValues: medidaEditar
       ? {
@@ -106,7 +115,7 @@ function FormMedida({ inscripcion, medidaEditar, onGuardar, onCancelar }: FormMe
           cadera: data.cadera ?? null,
           estatura: data.estatura ?? null,
         });
-        success("Medidas actualizadas");
+        success('Medidas actualizadas');
       } else {
         await createMedida({
           inscripcion,
@@ -121,11 +130,11 @@ function FormMedida({ inscripcion, medidaEditar, onGuardar, onCancelar }: FormMe
           cadera: data.cadera ?? null,
           estatura: data.estatura ?? null,
         });
-        success("Medidas registradas");
+        success('Medidas registradas');
       }
       onGuardar();
     } catch (err) {
-      error("Error al guardar medidas", String(err));
+      error('Error al guardar medidas', String(err));
     } finally {
       setGuardando(false);
     }
@@ -135,14 +144,30 @@ function FormMedida({ inscripcion, medidaEditar, onGuardar, onCancelar }: FormMe
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-slate-600">
-          {medidaEditar ? "Editar medición" : "Nueva medición"}
+          {medidaEditar ? 'Editar medición' : 'Nueva medición'}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <FormField label="Fecha" required error={errors.fecha?.message} className="col-span-3 sm:col-span-1" htmlFor="m-fecha">
-              <Input id="m-fecha" type="date" {...register("fecha")} className={cn(errors.fecha && "border-destructive")} />
+            <FormField
+              label="Fecha"
+              required
+              error={errors.fecha?.message}
+              className="col-span-3 sm:col-span-1"
+              htmlFor="m-fecha"
+            >
+              <Controller
+                name="fecha"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    onChange={(v) => field.onChange(v ?? today())}
+                    maxYear={new Date().getFullYear() + 1}
+                  />
+                )}
+              />
             </FormField>
             {CAMPOS_MEDIDA.map(({ key, label }) => (
               <FormField key={key} label={label} htmlFor={`m-${key}`}>
@@ -163,10 +188,13 @@ function FormMedida({ inscripcion, medidaEditar, onGuardar, onCancelar }: FormMe
               <X className="w-3.5 h-3.5 mr-1" /> Cancelar
             </Button>
             <Button type="submit" size="sm" disabled={guardando}>
-              {guardando
-                ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : <><Save className="w-3.5 h-3.5 mr-1" /> Guardar</>
-              }
+              {guardando ? (
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 mr-1" /> Guardar
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -188,7 +216,6 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [medidaEditar, setMedidaEditar] = useState<Medida | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Medida | null>(null);
   const { success, error } = useToast();
 
   const cargar = useCallback(async () => {
@@ -197,26 +224,15 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
       const data = await getMedidasByInscripcion(cliente.inscripcion);
       setMedidas(data);
     } catch (err) {
-      error("Error", String(err));
+      error('Error', String(err));
     } finally {
       setLoading(false);
     }
   }, [cliente.inscripcion, error]);
 
-  useEffect(() => { cargar(); }, [cargar]);
-
-  const handleEliminar = async () => {
-    if (!confirmDelete) return;
-    try {
-      await deleteMedida(confirmDelete.id);
-      success("Medición eliminada");
-      cargar();
-    } catch (err) {
-      error("Error", String(err));
-    } finally {
-      setConfirmDelete(null);
-    }
-  };
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   // Datos para la gráfica
   const datosGrafica = medidas.map((m) => ({
@@ -228,36 +244,40 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
 
   const columns: ColumnDef<Medida>[] = [
     {
-      accessorKey: "fecha",
-      header: "Fecha",
+      accessorKey: 'fecha',
+      header: 'Fecha',
       size: 120,
       cell: ({ getValue }) => <span className="text-sm">{formatDate(getValue<string>())}</span>,
     },
     ...CAMPOS_MEDIDA.map(({ key, label }) => ({
       accessorKey: key as string,
-      header: label.split(" ")[0],
+      header: label.split(' ')[0],
       cell: ({ getValue }: { getValue: () => unknown }) => {
         const v = getValue() as number | null;
-        return <span className="text-sm tabular-nums">{v != null && v > 0 ? v.toFixed(1) : "—"}</span>;
+        return (
+          <span className="text-sm tabular-nums">{v != null && v > 0 ? v.toFixed(1) : '—'}</span>
+        );
       },
     })),
     {
-      id: "acciones",
-      header: "",
-      size: 100,
+      id: 'acciones',
+      header: '',
+      size: 60,
       cell: ({ row }) => (
         <div className="flex items-center gap-1 justify-end">
           <Button
-            variant="ghost" size="icon" className="h-7 w-7" title="Editar" aria-label="Editar"
-            onClick={(e) => { e.stopPropagation(); setMedidaEditar(row.original); setMostrarFormulario(true); }}
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Editar"
+            aria-label="Editar"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMedidaEditar(row.original);
+              setMostrarFormulario(true);
+            }}
           >
             <Pencil className="w-3.5 h-3.5 text-slate-500" />
-          </Button>
-          <Button
-            variant="ghost" size="icon" className="h-7 w-7" title="Eliminar" aria-label="Eliminar"
-            onClick={(e) => { e.stopPropagation(); setConfirmDelete(row.original); }}
-          >
-            <Trash2 className="w-3.5 h-3.5 text-red-500" />
           </Button>
         </div>
       ),
@@ -266,146 +286,172 @@ export function ClienteMedidas({ cliente, onVolver }: Props) {
 
   return (
     <div className="h-full overflow-y-auto">
-    <div className="p-6 max-w-7xl mx-auto min-h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" title="Volver" aria-label="Volver" onClick={onVolver} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800">Trazabilidad de Medidas</h1>
-            <p className="text-sm text-slate-500">
-              {cliente.nombres} {cliente.apellidos} — Inscripción #{cliente.inscripcion}
-            </p>
+      <div className="p-6 max-w-7xl mx-auto min-h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Volver"
+              aria-label="Volver"
+              onClick={onVolver}
+              className="h-9 w-9"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold text-slate-800">Trazabilidad de Medidas</h1>
+              <p className="text-sm text-slate-500">
+                {cliente.nombres} {cliente.apellidos} — Inscripción #{cliente.inscripcion}
+              </p>
+            </div>
           </div>
+          {!mostrarFormulario && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setMedidaEditar(null);
+                setMostrarFormulario(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Nueva Medición
+            </Button>
+          )}
         </div>
-        {!mostrarFormulario && (
-          <Button
-            size="sm"
-            onClick={() => { setMedidaEditar(null); setMostrarFormulario(true); }}
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            Nueva Medición
-          </Button>
+
+        {/* Formulario inline */}
+        {mostrarFormulario && (
+          <div className="mb-6 max-w-4xl">
+            <FormMedida
+              inscripcion={cliente.inscripcion}
+              medidaEditar={medidaEditar}
+              onGuardar={() => {
+                setMostrarFormulario(false);
+                setMedidaEditar(null);
+                cargar();
+              }}
+              onCancelar={() => {
+                setMostrarFormulario(false);
+                setMedidaEditar(null);
+              }}
+            />
+          </div>
         )}
-      </div>
 
-      {/* Formulario inline */}
-      {mostrarFormulario && (
-        <div className="mb-6 max-w-4xl">
-          <FormMedida
-            inscripcion={cliente.inscripcion}
-            medidaEditar={medidaEditar}
-            onGuardar={() => { setMostrarFormulario(false); setMedidaEditar(null); cargar(); }}
-            onCancelar={() => { setMostrarFormulario(false); setMedidaEditar(null); }}
-          />
-        </div>
-      )}
+        {loading ? (
+          <PageLoading text="Cargando medidas..." />
+        ) : (
+          <Tabs defaultValue="tabla" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="tabla">
+                <Scale className="w-3.5 h-3.5 mr-1.5" />
+                Historial ({medidas.length})
+              </TabsTrigger>
+              <TabsTrigger value="grafica" disabled={medidas.length < 2}>
+                <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                Evolución
+              </TabsTrigger>
+            </TabsList>
 
-      {loading ? (
-        <PageLoading text="Cargando medidas..." />
-      ) : (
-        <Tabs defaultValue="tabla" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="tabla">
-              <Scale className="w-3.5 h-3.5 mr-1.5" />
-              Historial ({medidas.length})
-            </TabsTrigger>
-            <TabsTrigger value="grafica" disabled={medidas.length < 2}>
-              <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-              Evolución
-            </TabsTrigger>
-          </TabsList>
+            {/* HISTORIAL */}
+            <TabsContent value="tabla">
+              {medidas.length === 0 ? (
+                <Card className="max-w-md">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No hay medidas registradas para este cliente.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setMostrarFormulario(true)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1.5" />
+                      Registrar primera medición
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={[...medidas].reverse()} // más reciente primero
+                  showSearch={false}
+                  pageSize={15}
+                  emptyMessage="Sin medidas registradas."
+                />
+              )}
+            </TabsContent>
 
-          {/* HISTORIAL */}
-          <TabsContent value="tabla">
-            {medidas.length === 0 ? (
-              <Card className="max-w-md">
-                <CardContent className="p-12 text-center text-slate-400">
-                  <Scale className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">No hay medidas registradas para este cliente.</p>
-                  <Button
-                    variant="outline" size="sm" className="mt-4"
-                    onClick={() => setMostrarFormulario(true)}
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Registrar primera medición
-                  </Button>
+            {/* GRÁFICA */}
+            <TabsContent value="grafica">
+              <Card className="max-w-5xl">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Evolución de medidas corporales
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <LineChart
+                      data={datosGrafica}
+                      margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="fecha"
+                        tickFormatter={(v) => formatDate(v).substring(0, 5)}
+                        tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      />
+                      <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                      <Tooltip
+                        formatter={(value, name) => [`${value} cm/kg`, name]}
+                        labelFormatter={(label) => `Fecha: ${formatDate(String(label))}`}
+                        contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="Peso"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        connectNulls
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Cintura"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                        connectNulls
+                        strokeDasharray="4 2"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Cadera"
+                        stroke="#ec4899"
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                        connectNulls
+                        strokeDasharray="4 2"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <p className="text-xs text-slate-400 text-center mt-2">
+                    Mostrando: Peso (azul), Cintura (amarillo), Cadera (rosa)
+                  </p>
                 </CardContent>
               </Card>
-            ) : (
-              <DataTable
-                columns={columns}
-                data={[...medidas].reverse()} // más reciente primero
-                showSearch={false}
-                pageSize={15}
-                emptyMessage="Sin medidas registradas."
-              />
-            )}
-          </TabsContent>
-
-          {/* GRÁFICA */}
-          <TabsContent value="grafica">
-            <Card className="max-w-5xl">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Evolución de medidas corporales
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={datosGrafica} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="fecha"
-                      tickFormatter={(v) => formatDate(v).substring(0, 5)}
-                      tick={{ fontSize: 11, fill: "#94a3b8" }}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                    <Tooltip
-                      formatter={(value, name) => [`${value} cm/kg`, name]}
-                      labelFormatter={(label) => `Fecha: ${formatDate(String(label))}`}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line
-                      type="monotone" dataKey="Peso" stroke="#3b82f6"
-                      strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }}
-                      connectNulls
-                    />
-                    <Line
-                      type="monotone" dataKey="Cintura" stroke="#f59e0b"
-                      strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }}
-                      connectNulls strokeDasharray="4 2"
-                    />
-                    <Line
-                      type="monotone" dataKey="Cadera" stroke="#ec4899"
-                      strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }}
-                      connectNulls strokeDasharray="4 2"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-                <p className="text-xs text-slate-400 text-center mt-2">
-                  Mostrando: Peso (azul), Cintura (amarillo), Cadera (rosa)
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
-
-      <ConfirmDialog
-        open={!!confirmDelete}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-        title="¿Eliminar medición?"
-        description={`Se eliminará la medición del ${confirmDelete ? formatDate(confirmDelete.fecha) : ""}. Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        variant="destructive"
-        onConfirm={handleEliminar}
-      />
-    </div>
+            </TabsContent>
+          </Tabs>
+        )}
+      </div>
     </div>
   );
 }

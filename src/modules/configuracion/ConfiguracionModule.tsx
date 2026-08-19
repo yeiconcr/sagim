@@ -1,9 +1,9 @@
-import { Settings, Users, HardDrive } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ParametrosTab } from "./ParametrosTab";
-import { UsuariosTab } from "./UsuariosTab";
-import { BackupTab } from "./BackupTab";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { Settings, Users, HardDrive } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ParametrosTab } from './ParametrosTab';
+import { UsuariosTab } from './UsuariosTab';
+import { BackupTab } from './BackupTab';
+import { PageHeader } from '@/components/shared/PageHeader';
 
 export function ConfiguracionModule() {
   return (
@@ -12,20 +12,22 @@ export function ConfiguracionModule() {
         <PageHeader
           title="Configuración"
           description="Parámetros del sistema, usuarios y respaldo de datos"
-          icon={Settings}
           className="mb-0"
         />
 
         <Tabs defaultValue="parametros" className="flex-1 flex flex-col min-h-0">
           <TabsList className="self-start flex-shrink-0">
             <TabsTrigger value="parametros" className="gap-1.5">
-              <Settings className="w-3.5 h-3.5" />Parámetros
+              <Settings className="w-3.5 h-3.5" />
+              Parámetros
             </TabsTrigger>
             <TabsTrigger value="usuarios" className="gap-1.5">
-              <Users className="w-3.5 h-3.5" />Usuarios
+              <Users className="w-3.5 h-3.5" />
+              Usuarios
             </TabsTrigger>
             <TabsTrigger value="backup" className="gap-1.5">
-              <HardDrive className="w-3.5 h-3.5" />Backup
+              <HardDrive className="w-3.5 h-3.5" />
+              Backup
             </TabsTrigger>
           </TabsList>
 

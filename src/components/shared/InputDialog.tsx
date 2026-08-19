@@ -2,7 +2,7 @@
  * InputDialog — Dialog reutilizable con campo de input numérico.
  * Usado para pagos, abonos, y cualquier acción que requiera un valor.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FormField } from "./FormField";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { FormField } from './FormField';
 
 interface InputDialogProps {
   open: boolean;
@@ -21,7 +21,7 @@ interface InputDialogProps {
   title: string;
   description?: string;
   inputLabel: string;
-  inputType?: "number" | "text";
+  inputType?: 'number' | 'text';
   inputPlaceholder?: string;
   initialValue?: string;
   min?: number;
@@ -39,14 +39,14 @@ export function InputDialog({
   title,
   description,
   inputLabel,
-  inputType = "number",
+  inputType = 'number',
   inputPlaceholder,
-  initialValue = "",
+  initialValue = '',
   min,
   max,
   step = 1000,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
   onConfirm,
   loading = false,
 }: InputDialogProps) {
@@ -64,7 +64,7 @@ export function InputDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !loading) {
+    if (e.key === 'Enter' && !loading) {
       handleConfirm();
     }
   };

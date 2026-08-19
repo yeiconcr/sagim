@@ -1,21 +1,21 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 export type ModuloActivo =
-  | "recepcion"
-  | "clientes"
-  | "catalogos"
-  | "inventario"
-  | "ventas-gym"
-  | "ventas-tienda"
-  | "compras"
-  | "caja"
-  | "cartera"
-  | "pagos-instructores"
-  | "procesos"
-  | "reportes"
-  | "configuracion";
+  | 'recepcion'
+  | 'clientes'
+  | 'catalogos'
+  | 'inventario'
+  | 'ventas-gym'
+  | 'ventas-tienda'
+  | 'compras'
+  | 'caja'
+  | 'cartera'
+  | 'pagos-instructores'
+  | 'procesos'
+  | 'reportes'
+  | 'configuracion';
 
-export type ClienteVistaInicial = "lista" | "pagos" | "medidas" | null;
+export type ClienteVistaInicial = 'lista' | 'pagos' | 'medidas' | null;
 
 interface AppState {
   moduloActivo: ModuloActivo;
@@ -34,7 +34,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  moduloActivo: "recepcion",
+  moduloActivo: 'recepcion',
   sidebarCollapsed: false,
   vencimientosHoy: 0,
   clientePrecargado: null,
@@ -45,14 +45,16 @@ export const useAppStore = create<AppState>((set) => ({
   setVencimientosHoy: (count) => set({ vencimientosHoy: count }),
   setClientePrecargado: (cedula) => set({ clientePrecargado: cedula }),
   setClienteVistaInicial: (vista) => set({ clienteVistaInicial: vista }),
-  navegarAClientePagos: (cedula) => set({ 
-    moduloActivo: "clientes", 
-    clientePrecargado: cedula, 
-    clienteVistaInicial: "pagos" 
-  }),
-  navegarAClienteMedidas: (cedula) => set({ 
-    moduloActivo: "clientes", 
-    clientePrecargado: cedula, 
-    clienteVistaInicial: "medidas" 
-  }),
+  navegarAClientePagos: (cedula) =>
+    set({
+      moduloActivo: 'clientes',
+      clientePrecargado: cedula,
+      clienteVistaInicial: 'pagos',
+    }),
+  navegarAClienteMedidas: (cedula) =>
+    set({
+      moduloActivo: 'clientes',
+      clientePrecargado: cedula,
+      clienteVistaInicial: 'medidas',
+    }),
 }));

@@ -1,36 +1,37 @@
 #!/usr/bin/env node
 /**
  * SAGIM — Script de Migración Access (.accdb) → SQLite
- * 
+ *
  * Uso:
  *   node src/migration/migrate.js [ruta-accdb] [ruta-sqlite]
- * 
+ *
  * Ejemplo:
  *   node src/migration/migrate.js "../SAGIM/BD/Datos.accdb" "./sagim.db"
- * 
+ *
  * Si no se pasan argumentos usa las rutas por defecto.
  */
 
-const { default: MDBReader } = require("mdb-reader");
-const Database = require("better-sqlite3");
-const fs = require("fs");
-const path = require("path");
+const { default: MDBReader } = require('mdb-reader');
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const path = require('path');
 
 // =============================================
 // CONFIGURACIÓN
 // =============================================
-const DEFAULT_ACCDB = path.resolve(__dirname, "../../SAGIM/BD/Datos.accdb");
+const DEFAULT_ACCDB = path.resolve(__dirname, '../../SAGIM/BD/Datos.accdb');
 // Tauri guarda la BD en ~/Library/Application Support/com.sagim.gimnasio/ en macOS
 // y en %APPDATA%/com.sagim.gimnasio/ en Windows
-const TAURI_DATA_DIR = process.platform === "darwin"
-  ? path.join(process.env.HOME || "", "Library", "Application Support", "com.sagim.gimnasio")
-  : path.join(process.env.APPDATA || "", "com.sagim.gimnasio");
+const TAURI_DATA_DIR =
+  process.platform === 'darwin'
+    ? path.join(process.env.HOME || '', 'Library', 'Application Support', 'com.sagim.gimnasio')
+    : path.join(process.env.APPDATA || '', 'com.sagim.gimnasio');
 
-const DEFAULT_SQLITE = path.join(TAURI_DATA_DIR, "sagim.db");
+const DEFAULT_SQLITE = path.join(TAURI_DATA_DIR, 'sagim.db');
 
 const ACCDB_PATH = process.argv[2] || DEFAULT_ACCDB;
 const SQLITE_PATH = process.argv[3] || DEFAULT_SQLITE;
-const FOTOS_DIR = path.join(path.dirname(SQLITE_PATH), "fotos");
+const FOTOS_DIR = path.join(path.dirname(SQLITE_PATH), 'fotos');
 
 // =============================================
 // LOG
@@ -53,10 +54,10 @@ function logError(tabla, msg) {
 function toDate(val) {
   if (!val) return null;
   try {
-    if (val instanceof Date) return val.toISOString().split("T")[0];
+    if (val instanceof Date) return val.toISOString().split('T')[0];
     const d = new Date(val);
     if (isNaN(d.getTime())) return null;
-    return d.toISOString().split("T")[0];
+    return d.toISOString().split('T')[0];
   } catch {
     return null;
   }
@@ -94,17 +95,17 @@ function guardarFoto(binData, inscripcion) {
     let start = -1;
     for (let i = 0; i < Math.min(buf.length - 4, 300); i++) {
       // JPG
-      if (buf[i] === 0xFF && buf[i + 1] === 0xD8 && buf[i + 2] === 0xFF) {
+      if (buf[i] === 0xff && buf[i + 1] === 0xd8 && buf[i + 2] === 0xff) {
         start = i;
         break;
       }
       // BMP
-      if (buf[i] === 0x42 && buf[i + 1] === 0x4D) {
+      if (buf[i] === 0x42 && buf[i + 1] === 0x4d) {
         start = i;
         break;
       }
       // PNG
-      if (buf[i] === 0x89 && buf[i + 1] === 0x50 && buf[i + 2] === 0x4E && buf[i + 3] === 0x47) {
+      if (buf[i] === 0x89 && buf[i + 1] === 0x50 && buf[i + 2] === 0x4e && buf[i + 3] === 0x47) {
         start = i;
         break;
       }
@@ -113,7 +114,7 @@ function guardarFoto(binData, inscripcion) {
     if (start === -1) return null;
 
     const imgBuf = buf.slice(start);
-    const ext = buf[start] === 0x42 ? "bmp" : "jpg";
+    const ext = buf[start] === 0x42 ? 'bmp' : 'jpg';
     const filename = `${inscripcion}.${ext}`;
     const filepath = path.join(FOTOS_DIR, filename);
     fs.writeFileSync(filepath, imgBuf);
@@ -127,26 +128,31 @@ function guardarFoto(binData, inscripcion) {
 // TABLAS QUE SE IGNORAN (tablas internas de Access)
 // =============================================
 const TABLAS_IGNORADAS = new Set([
-  "~TMPCLP1871", "~TMPCLP525511", "Errores de pegado",
-  "MSysObjects", "MSysACEs", "MSysQueries", "MSysRelationships",
-  "Ubicacion",
+  '~TMPCLP1871',
+  '~TMPCLP525511',
+  'Errores de pegado',
+  'MSysObjects',
+  'MSysACEs',
+  'MSysQueries',
+  'MSysRelationships',
+  'Ubicacion',
 ]);
 
 // =============================================
 // MAIN
 // =============================================
 async function main() {
-  log("=".repeat(60));
-  log("SAGIM — Migración Access → SQLite");
-  log("=".repeat(60));
+  log('='.repeat(60));
+  log('SAGIM — Migración Access → SQLite');
+  log('='.repeat(60));
   log(`Origen:  ${ACCDB_PATH}`);
   log(`Destino: ${SQLITE_PATH}`);
   log(`Fotos:   ${FOTOS_DIR}`);
-  log("");
+  log('');
 
   // Verificar archivo Access
   if (!fs.existsSync(ACCDB_PATH)) {
-    logError("SISTEMA", `Archivo .accdb no encontrado: ${ACCDB_PATH}`);
+    logError('SISTEMA', `Archivo .accdb no encontrado: ${ACCDB_PATH}`);
     process.exit(1);
   }
 
@@ -157,14 +163,14 @@ async function main() {
 
   // Si ya existe el SQLite, hacer backup
   if (fs.existsSync(SQLITE_PATH)) {
-    const backup = SQLITE_PATH.replace(".db", `_backup_${Date.now()}.db`);
+    const backup = SQLITE_PATH.replace('.db', `_backup_${Date.now()}.db`);
     fs.copyFileSync(SQLITE_PATH, backup);
     log(`Backup de BD existente creado: ${backup}`);
     fs.unlinkSync(SQLITE_PATH);
   }
 
   // Abrir Access
-  log("Leyendo base de datos Access...");
+  log('Leyendo base de datos Access...');
   const accdbBuf = fs.readFileSync(ACCDB_PATH);
   const accdb = new MDBReader(accdbBuf);
   const tablasAccess = accdb.getTableNames().filter((t) => !TABLAS_IGNORADAS.has(t));
@@ -172,14 +178,14 @@ async function main() {
 
   // Abrir/Crear SQLite
   const sqlite = new Database(SQLITE_PATH);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = OFF"); // OFF durante migración
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = OFF'); // OFF durante migración
 
   // Crear esquema completo
-  log("Creando esquema SQLite...");
+  log('Creando esquema SQLite...');
   crearEsquema(sqlite);
-  log("Esquema creado.");
-  log("");
+  log('Esquema creado.');
+  log('');
 
   // Estadísticas
   const stats = {};
@@ -211,28 +217,30 @@ async function main() {
   migrar.abonoCuota();
   migrar.pagosIns();
 
-  sqlite.pragma("foreign_keys = ON");
+  sqlite.pragma('foreign_keys = ON');
 
   // ---- RESUMEN ----
-  log("");
-  log("=".repeat(60));
-  log("RESUMEN DE MIGRACIÓN");
-  log("=".repeat(60));
+  log('');
+  log('='.repeat(60));
+  log('RESUMEN DE MIGRACIÓN');
+  log('='.repeat(60));
   let total = 0;
   for (const [tabla, { ok, errors }] of Object.entries(stats)) {
-    const status = errors === 0 ? "✓" : "⚠";
-    log(`  ${status} ${tabla.padEnd(22)} ${String(ok).padStart(6)} registros${errors > 0 ? `  (${errors} errores)` : ""}`);
+    const status = errors === 0 ? '✓' : '⚠';
+    log(
+      `  ${status} ${tabla.padEnd(22)} ${String(ok).padStart(6)} registros${errors > 0 ? `  (${errors} errores)` : ''}`
+    );
     total += ok;
   }
-  log(`${"".padEnd(40, "-")}`);
+  log(`${''.padEnd(40, '-')}`);
   log(`  TOTAL: ${total} registros migrados`);
-  log("=".repeat(60));
+  log('='.repeat(60));
 
   // Guardar log
-  const logPath = path.join(sqliteDir, "migration_log.txt");
-  fs.writeFileSync(logPath, logLines.join("\n"), "utf8");
+  const logPath = path.join(sqliteDir, 'migration_log.txt');
+  fs.writeFileSync(logPath, logLines.join('\n'), 'utf8');
   log(`\nLog guardado en: ${logPath}`);
-  log("Migración completada exitosamente.");
+  log('Migración completada exitosamente.');
   sqlite.close();
 }
 
@@ -446,8 +454,11 @@ function crearEsquema(db) {
   `;
 
   // Ejecutar cada sentencia
-  for (const stmt of sql.split(";").map((s) => s.trim()).filter((s) => s.length > 0)) {
-    db.prepare(stmt + ";").run();
+  for (const stmt of sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)) {
+    db.prepare(stmt + ';').run();
   }
 }
 
@@ -467,7 +478,9 @@ function migracionFactory(accdb, sqlite, stats) {
     stats[tabla] = { ok: 0, errors: 0 };
   }
 
-  function incOk(tabla) { stats[tabla].ok++; }
+  function incOk(tabla) {
+    stats[tabla].ok++;
+  }
   function incErr(tabla, msg) {
     stats[tabla].errors++;
     logError(tabla, msg);
@@ -476,79 +489,100 @@ function migracionFactory(accdb, sqlite, stats) {
   return {
     // ---- PARAMETROS ----
     parametros() {
-      initStats("parametros");
-      log("Migrando: Parametros...");
-      const rows = getTable("Parametros");
+      initStats('parametros');
+      log('Migrando: Parametros...');
+      const rows = getTable('Parametros');
       if (rows.length === 0) {
-        sqlite.prepare(`INSERT INTO parametros (nombre_gimnasio, conse_ins, conse_rec, conse_fac, dias_inactivar, dias_alerta_vencimiento) VALUES ('MI GIMNASIO', 1, 1, 1, 90, 5)`).run();
-        incOk("parametros");
+        sqlite
+          .prepare(
+            `INSERT INTO parametros (nombre_gimnasio, conse_ins, conse_rec, conse_fac, dias_inactivar, dias_alerta_vencimiento) VALUES ('MI GIMNASIO', 1, 1, 1, 90, 5)`
+          )
+          .run();
+        incOk('parametros');
         return;
       }
       const r = rows[0];
       try {
-        sqlite.prepare(`
+        sqlite
+          .prepare(
+            `
           INSERT INTO parametros (nombre_gimnasio, nit, direccion, telefono,
             conse_ins, conse_rec, conse_fac, dias_inactivar, dias_alerta_vencimiento)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          toStr(r.Nomb_emp) || "MI GIMNASIO",
-          toStr(r.Rut),
-          toStr(r.Direcc_emp),
-          toStr(r.Telefo_emp),
-          toInt(r.Conse_ins) || 1,
-          toInt(r.Conse_rec) || 1,
-          toInt(r.Conse_fac) || 1,
-          toInt(r.DiasInactiva) || 90,
-          5
-        );
-        incOk("parametros");
+        `
+          )
+          .run(
+            toStr(r.Nomb_emp) || 'MI GIMNASIO',
+            toStr(r.Rut),
+            toStr(r.Direcc_emp),
+            toStr(r.Telefo_emp),
+            toInt(r.Conse_ins) || 1,
+            toInt(r.Conse_rec) || 1,
+            toInt(r.Conse_fac) || 1,
+            toInt(r.DiasInactiva) || 90,
+            5
+          );
+        incOk('parametros');
       } catch (e) {
-        incErr("parametros", e.message);
+        incErr('parametros', e.message);
       }
     },
 
     // ---- ESPECIALIDADES ----
     especialidades() {
-      initStats("especialidades");
-      log("Migrando: Especialidades...");
-      const rows = getTable("Especialidades");
-      const insert = sqlite.prepare(`INSERT OR IGNORE INTO especialidades (id, nombre) VALUES (?, ?)`);
+      initStats('especialidades');
+      log('Migrando: Especialidades...');
+      const rows = getTable('Especialidades');
+      const insert = sqlite.prepare(
+        `INSERT OR IGNORE INTO especialidades (id, nombre) VALUES (?, ?)`
+      );
       const insertMany = sqlite.transaction((data) => {
         for (const r of data) {
           try {
-            insert.run(toInt(r.IdEspecialidad), toStr(r.detalle) || "Sin nombre");
-            incOk("especialidades");
-          } catch (e) { incErr("especialidades", e.message); }
+            insert.run(toInt(r.IdEspecialidad), toStr(r.detalle) || 'Sin nombre');
+            incOk('especialidades');
+          } catch (e) {
+            incErr('especialidades', e.message);
+          }
         }
       });
       insertMany(rows);
       // Semilla si vacía
       if (rows.length === 0) {
         sqlite.prepare(`INSERT INTO especialidades (nombre) VALUES ('General')`).run();
-        incOk("especialidades");
+        incOk('especialidades');
       }
     },
 
     // ---- FORMA DE PAGO ----
     formaDePago() {
-      initStats("forma_pago");
-      log("Migrando: FormaDePago...");
-      const rows = getTable("FormaDePago");
+      initStats('forma_pago');
+      log('Migrando: FormaDePago...');
+      const rows = getTable('FormaDePago');
       if (rows.length === 0) {
-        const semilla = [["Efectivo", 0], ["Tarjeta", 0], ["Transferencia", 0], ["Crédito 30 días", 30]];
+        const semilla = [
+          ['Efectivo', 0],
+          ['Tarjeta', 0],
+          ['Transferencia', 0],
+          ['Crédito 30 días', 30],
+        ];
         for (const [d, p] of semilla) {
           sqlite.prepare(`INSERT INTO forma_pago (detalle, plazo_dias) VALUES (?, ?)`).run(d, p);
-          incOk("forma_pago");
+          incOk('forma_pago');
         }
         return;
       }
-      const insert = sqlite.prepare(`INSERT OR IGNORE INTO forma_pago (id, detalle, plazo_dias) VALUES (?, ?, ?)`);
+      const insert = sqlite.prepare(
+        `INSERT OR IGNORE INTO forma_pago (id, detalle, plazo_dias) VALUES (?, ?, ?)`
+      );
       const insertMany = sqlite.transaction((data) => {
         for (const r of data) {
           try {
-            insert.run(toInt(r.IdFormaPago), toStr(r.detalle) || "Sin nombre", toInt(r.plazoDias));
-            incOk("forma_pago");
-          } catch (e) { incErr("forma_pago", e.message); }
+            insert.run(toInt(r.IdFormaPago), toStr(r.detalle) || 'Sin nombre', toInt(r.plazoDias));
+            incOk('forma_pago');
+          } catch (e) {
+            incErr('forma_pago', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -556,9 +590,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- PROVEEDORES ----
     proveedores() {
-      initStats("proveedores");
-      log("Migrando: Proveedores...");
-      const rows = getTable("Proveedores");
+      initStats('proveedores');
+      log('Migrando: Proveedores...');
+      const rows = getTable('Proveedores');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO proveedores (nit, nombre, direccion, telefono, ciudad, email)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -569,14 +603,16 @@ function migracionFactory(accdb, sqlite, stats) {
             const nit = toStr(r.cedula) || `PROV-${Date.now()}-${Math.random()}`;
             insert.run(
               nit,
-              `${toStr(r.nombres) || ""} ${toStr(r.apellidos) || ""}`.trim() || "Proveedor",
+              `${toStr(r.nombres) || ''} ${toStr(r.apellidos) || ''}`.trim() || 'Proveedor',
               toStr(r.direccion),
               toStr(r.telefono),
               toStr(r.ciudad),
               toStr(r.email)
             );
-            incOk("proveedores");
-          } catch (e) { incErr("proveedores", e.message); }
+            incOk('proveedores');
+          } catch (e) {
+            incErr('proveedores', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -584,9 +620,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- INSTRUCTORES ----
     instructores() {
-      initStats("instructores");
-      log("Migrando: Instructor...");
-      const rows = getTable("Instructor");
+      initStats('instructores');
+      log('Migrando: Instructor...');
+      const rows = getTable('Instructor');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO instructores (cedula, nombres, apellidos, direccion, telefono, email, id_especialidad, tarifa)
         VALUES (?, ?, ?, ?, ?, ?, ?, 0)
@@ -597,15 +633,17 @@ function migracionFactory(accdb, sqlite, stats) {
             const cedula = toStr(r.cedula) || `INS-${Date.now()}-${Math.random()}`;
             insert.run(
               cedula,
-              toStr(r.nombres) || "Instructor",
-              toStr(r.apellidos) || "",
+              toStr(r.nombres) || 'Instructor',
+              toStr(r.apellidos) || '',
               toStr(r.direccion),
               toStr(r.telefono),
               toStr(r.email),
               r.IdEspecialidad ? toInt(r.IdEspecialidad) : null
             );
-            incOk("instructores");
-          } catch (e) { incErr("instructores", e.message); }
+            incOk('instructores');
+          } catch (e) {
+            incErr('instructores', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -613,9 +651,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- ACTIVIDADES ----
     actividades() {
-      initStats("actividades");
-      log("Migrando: Actividades...");
-      const rows = getTable("Actividades");
+      initStats('actividades');
+      log('Migrando: Actividades...');
+      const rows = getTable('Actividades');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO actividades (codigo, nombre, tarifa, factor, periodicidad, impuesto)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -625,14 +663,16 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toStr(r.Idactividad) || `ACT-${Date.now()}`,
-              toStr(r.detalle) || "Actividad",
+              toStr(r.detalle) || 'Actividad',
               toNum(r.tarifa),
               toInt(r.factor) || 30,
-              toStr(r.peridiocidad) === "U" ? "U" : "M",
+              toStr(r.peridiocidad) === 'U' ? 'U' : 'M',
               toNum(r.impuesto)
             );
-            incOk("actividades");
-          } catch (e) { incErr("actividades", e.message); }
+            incOk('actividades');
+          } catch (e) {
+            incErr('actividades', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -640,9 +680,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- CLIENTES ----
     clientes() {
-      initStats("clientes");
-      log("Migrando: Clientes (puede tomar un momento por las fotos)...");
-      const rows = getTable("Clientes");
+      initStats('clientes');
+      log('Migrando: Clientes (puede tomar un momento por las fotos)...');
+      const rows = getTable('Clientes');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO clientes
           (inscripcion, cedula, nombres, apellidos, direccion, telefono,
@@ -664,21 +704,23 @@ function migracionFactory(accdb, sqlite, stats) {
             insert.run(
               inscripcion,
               toStr(r.cedula) || `CLI-${inscripcion}`,
-              toStr(r.nombres) || "Sin Nombre",
-              toStr(r.apellidos) || "",
+              toStr(r.nombres) || 'Sin Nombre',
+              toStr(r.apellidos) || '',
               toStr(r.direccion),
               toStr(r.telefono),
               toStr(r.celular),
               toStr(r.email),
-              toStr(r.ciudad) || "PALMIRA",
+              toStr(r.ciudad) || 'PALMIRA',
               toStr(r.sexo),
               toDate(r.fecinsc),
               toDate(r.fecnaci),
-              (estado === "A" || estado === "I") ? estado : "A",
+              estado === 'A' || estado === 'I' ? estado : 'A',
               fotoPath
             );
-            incOk("clientes");
-          } catch (e) { incErr("clientes", `cedula=${r.cedula}: ${e.message}`); }
+            incOk('clientes');
+          } catch (e) {
+            incErr('clientes', `cedula=${r.cedula}: ${e.message}`);
+          }
         }
       });
       insertMany(rows);
@@ -687,9 +729,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- MEDIDAS ----
     medidas() {
-      initStats("medidas");
-      log("Migrando: Medidas...");
-      const rows = getTable("Medidas");
+      initStats('medidas');
+      log('Migrando: Medidas...');
+      const rows = getTable('Medidas');
       const insert = sqlite.prepare(`
         INSERT INTO medidas (inscripcion, fecha, peso, talla, cintura, brazos, muslos, pantorrilla, torax, cadera, estatura)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -699,19 +741,21 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toInt(r.Inscripcion),
-              toDate(r.Fecham) || new Date().toISOString().split("T")[0],
-              toNum(r.txtMed1),  // peso (kg)
-              null,              // talla corporal — no existe campo directo en Access (txtMed2 es talla de ropa)
-              toNum(r.txtMed3),  // cintura (cm)
-              toNum(r.txtMed4),  // brazos (cm)
-              toNum(r.txtMed5),  // muslos (cm)
-              toNum(r.txtMed6),  // pantorrilla (cm)
-              toNum(r.txtMed7),  // torax (cm)
-              toNum(r.txtMed8),  // cadera (cm)
-              toNum(r.txtMed9)   // estatura (cm o metros segun registro — datos mixtos del sistema original)
+              toDate(r.Fecham) || new Date().toISOString().split('T')[0],
+              toNum(r.txtMed1), // peso (kg)
+              null, // talla corporal — no existe campo directo en Access (txtMed2 es talla de ropa)
+              toNum(r.txtMed3), // cintura (cm)
+              toNum(r.txtMed4), // brazos (cm)
+              toNum(r.txtMed5), // muslos (cm)
+              toNum(r.txtMed6), // pantorrilla (cm)
+              toNum(r.txtMed7), // torax (cm)
+              toNum(r.txtMed8), // cadera (cm)
+              toNum(r.txtMed9) // estatura (cm o metros segun registro — datos mixtos del sistema original)
             );
-            incOk("medidas");
-          } catch (e) { incErr("medidas", e.message); }
+            incOk('medidas');
+          } catch (e) {
+            incErr('medidas', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -719,9 +763,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- INVENTARIO ----
     inventario() {
-      initStats("inventario");
-      log("Migrando: Inventario...");
-      const rows = getTable("Inventario");
+      initStats('inventario');
+      log('Migrando: Inventario...');
+      const rows = getTable('Inventario');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO inventario (codigo, nombre, stock, unidad_medida, precio_compra, ganancia, impuesto, ubicacion)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -731,16 +775,18 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toStr(r.codigo) || `ART-${Date.now()}`,
-              toStr(r.nombre) || "Artículo",
+              toStr(r.nombre) || 'Artículo',
               toNum(r.stock),
-              toStr(r.unmed) || "UND",
+              toStr(r.unmed) || 'UND',
               toNum(r.pCompra),
               toNum(r.ganancia),
               toNum(r.impuesto),
               toStr(r.CodUb)
             );
-            incOk("inventario");
-          } catch (e) { incErr("inventario", e.message); }
+            incOk('inventario');
+          } catch (e) {
+            incErr('inventario', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -748,12 +794,12 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- USUARIOS ----
     usuarios() {
-      initStats("usuarios");
-      log("Migrando: Usuario...");
-      const rows = getTable("Usuario");
+      initStats('usuarios');
+      log('Migrando: Usuario...');
+      const rows = getTable('Usuario');
       // Para usuarios migrados usamos su password original (ya cifrado con la función VB6)
       // Se establece como hash bcrypt de 'sagim123' para todos, el admin puede cambiarlas
-      const DEFAULT_HASH = "$2b$10$HHSTs3XNrBdL1LCMR8dDye07Vv1PV3d69vRvHuvrOi7agPoEjiobq";
+      const DEFAULT_HASH = '$2b$10$HHSTs3XNrBdL1LCMR8dDye07Vv1PV3d69vRvHuvrOi7agPoEjiobq';
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO usuarios (nombre, password_hash, cargo, nivel)
         VALUES (?, ?, ?, ?)
@@ -762,30 +808,31 @@ function migracionFactory(accdb, sqlite, stats) {
         for (const r of data) {
           try {
             const nivel = toInt(r.nivel) === 1 ? 1 : 2;
-            insert.run(
-              toStr(r.nombre) || "usuario",
-              DEFAULT_HASH,
-              toStr(r.cargo) || "",
-              nivel
-            );
-            incOk("usuarios");
-          } catch (e) { incErr("usuarios", e.message); }
+            insert.run(toStr(r.nombre) || 'usuario', DEFAULT_HASH, toStr(r.cargo) || '', nivel);
+            incOk('usuarios');
+          } catch (e) {
+            incErr('usuarios', e.message);
+          }
         }
       });
       insertMany(rows);
       // Asegurar que existe el admin
       const adminExists = sqlite.prepare("SELECT id FROM usuarios WHERE nombre='admin'").get();
       if (!adminExists) {
-        sqlite.prepare(`INSERT INTO usuarios (nombre, password_hash, cargo, nivel) VALUES ('admin', ?, 'Administrador', 1)`).run(DEFAULT_HASH);
-        incOk("usuarios");
+        sqlite
+          .prepare(
+            `INSERT INTO usuarios (nombre, password_hash, cargo, nivel) VALUES ('admin', ?, 'Administrador', 1)`
+          )
+          .run(DEFAULT_HASH);
+        incOk('usuarios');
       }
     },
 
     // ---- PAGOS_CLI ----
     pagosCli() {
-      initStats("pagos_cli");
-      log("Migrando: PagosCli...");
-      const rows = getTable("PagosCli");
+      initStats('pagos_cli');
+      log('Migrando: PagosCli...');
+      const rows = getTable('PagosCli');
       const insert = sqlite.prepare(`
         INSERT INTO pagos_cli (inscripcion, fecha_pag, id_actividad, valor, periodicidad, observaciones, estado)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -796,15 +843,17 @@ function migracionFactory(accdb, sqlite, stats) {
             const estado = toStr(r.Estado);
             insert.run(
               toInt(r.Inscripcion),
-              toDate(r.FechaPag) || new Date().toISOString().split("T")[0],
+              toDate(r.FechaPag) || new Date().toISOString().split('T')[0],
               toStr(r.Idactividad),
               toNum(r.Valor),
-              toStr(r.Periodicidad) === "U" ? "U" : "M",
+              toStr(r.Periodicidad) === 'U' ? 'U' : 'M',
               toStr(r.Observaciones),
-              (estado === "X") ? "X" : "A"
+              estado === 'X' ? 'X' : 'A'
             );
-            incOk("pagos_cli");
-          } catch (e) { incErr("pagos_cli", e.message); }
+            incOk('pagos_cli');
+          } catch (e) {
+            incErr('pagos_cli', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -812,9 +861,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- RECIBOS ----
     recibos() {
-      initStats("recibos");
-      log("Migrando: ReciboPago...");
-      const rows = getTable("ReciboPago");
+      initStats('recibos');
+      log('Migrando: ReciboPago...');
+      const rows = getTable('ReciboPago');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO recibos (nro_docu, fecha, hora, cedula, valor_letras, estado, fecha_anulacion, hora_anulacion, usuario_anulacion)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -825,17 +874,19 @@ function migracionFactory(accdb, sqlite, stats) {
             const estado = toStr(r.Estado);
             insert.run(
               toInt(r.nroDocu),
-              toDate(r.fecha) || new Date().toISOString().split("T")[0],
+              toDate(r.fecha) || new Date().toISOString().split('T')[0],
               toStr(r.Horcre),
               toStr(r.cCedula),
               toStr(r.Valorletras),
-              (estado === "X") ? "X" : "A",
+              estado === 'X' ? 'X' : 'A',
               toDate(r.Fecnov),
               toStr(r.Hornov),
               toStr(r.Usuario)
             );
-            incOk("recibos");
-          } catch (e) { incErr("recibos", e.message); }
+            incOk('recibos');
+          } catch (e) {
+            incErr('recibos', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -843,9 +894,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- DET_RECIBO_PAGO ----
     detReciboPago() {
-      initStats("det_recibo_pago");
-      log("Migrando: detReciboPago...");
-      const rows = getTable("detReciboPago");
+      initStats('det_recibo_pago');
+      log('Migrando: detReciboPago...');
+      const rows = getTable('detReciboPago');
       const insert = sqlite.prepare(`
         INSERT INTO det_recibo_pago (nro_docu, codigo, detalle, cantidad, punitario, descuento, impuesto, total, unmed)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -855,17 +906,19 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toInt(r.nroDocu),
-              toStr(r.codigo) || "",
+              toStr(r.codigo) || '',
               toStr(r.detalle),
               toNum(r.cantidad) || 1,
               toNum(r.pUnitario),
               toNum(r.descuento),
               toNum(r.impuesto),
               toNum(r.total),
-              toStr(r.unmed) || "SRV"
+              toStr(r.unmed) || 'SRV'
             );
-            incOk("det_recibo_pago");
-          } catch (e) { incErr("det_recibo_pago", e.message); }
+            incOk('det_recibo_pago');
+          } catch (e) {
+            incErr('det_recibo_pago', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -873,9 +926,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- FACTU_TIENDA ----
     FactuTienda() {
-      initStats("factu_tienda");
-      log("Migrando: FactuTienda...");
-      const rows = getTable("FactuTienda");
+      initStats('factu_tienda');
+      log('Migrando: FactuTienda...');
+      const rows = getTable('FactuTienda');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO factu_tienda (nro_docu, fecha, hora, cedula, id_forma_pago, plazo, estado, fecha_anulacion, hora_anulacion, usuario_anulacion)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -886,18 +939,20 @@ function migracionFactory(accdb, sqlite, stats) {
             const estado = toStr(r.Estado);
             insert.run(
               toInt(r.nroDocu),
-              toDate(r.fecha) || new Date().toISOString().split("T")[0],
+              toDate(r.fecha) || new Date().toISOString().split('T')[0],
               null,
               toStr(r.cCedula),
               r.IdFormaPago ? toInt(r.IdFormaPago) : null,
               toInt(r.Plazo),
-              (estado === "X") ? "X" : "A",
+              estado === 'X' ? 'X' : 'A',
               toDate(r.Fecnov),
               toStr(r.Hornov),
               toStr(r.Usuario)
             );
-            incOk("factu_tienda");
-          } catch (e) { incErr("factu_tienda", e.message); }
+            incOk('factu_tienda');
+          } catch (e) {
+            incErr('factu_tienda', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -905,9 +960,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- DET_FACTU_TIENDA ----
     detFactuTienda() {
-      initStats("det_factu_tienda");
-      log("Migrando: detFactuTienda...");
-      const rows = getTable("detFactuTienda");
+      initStats('det_factu_tienda');
+      log('Migrando: detFactuTienda...');
+      const rows = getTable('detFactuTienda');
       const insert = sqlite.prepare(`
         INSERT INTO det_factu_tienda (nro_docu, codigo, detalle, cantidad, punitario, descuento, impuesto, total, unmed)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -917,17 +972,19 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toInt(r.nroDocu),
-              toStr(r.codigo) || "",
+              toStr(r.codigo) || '',
               toStr(r.detalle),
               toNum(r.cantidad) || 1,
               toNum(r.pUnitario),
               toNum(r.descuento),
               toNum(r.impuesto),
               toNum(r.total),
-              toStr(r.unmed) || "UND"
+              toStr(r.unmed) || 'UND'
             );
-            incOk("det_factu_tienda");
-          } catch (e) { incErr("det_factu_tienda", e.message); }
+            incOk('det_factu_tienda');
+          } catch (e) {
+            incErr('det_factu_tienda', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -935,9 +992,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- COMPRAS ----
     compras() {
-      initStats("compras");
-      log("Migrando: Compra...");
-      const rows = getTable("Compra");
+      initStats('compras');
+      log('Migrando: Compra...');
+      const rows = getTable('Compra');
       const insert = sqlite.prepare(`
         INSERT OR IGNORE INTO compras (nro_compra, fecha, nro_documento, estado)
         VALUES (?, ?, ?, ?)
@@ -947,12 +1004,14 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toInt(r.nroCompra),
-              toDate(r.fecha) || new Date().toISOString().split("T")[0],
+              toDate(r.fecha) || new Date().toISOString().split('T')[0],
               toStr(r.referencia),
-              toStr(r.Estado) === "X" ? "X" : "A"
+              toStr(r.Estado) === 'X' ? 'X' : 'A'
             );
-            incOk("compras");
-          } catch (e) { incErr("compras", e.message); }
+            incOk('compras');
+          } catch (e) {
+            incErr('compras', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -960,9 +1019,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- DET_COMPRA ----
     detCompra() {
-      initStats("det_compra");
-      log("Migrando: detCompra...");
-      const rows = getTable("detCompra");
+      initStats('det_compra');
+      log('Migrando: detCompra...');
+      const rows = getTable('detCompra');
       const insert = sqlite.prepare(`
         INSERT INTO det_compra (nro_compra, codigo, detalle, cantidad, punitario, total)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -972,14 +1031,16 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toInt(r.nroCompra),
-              toStr(r.codigo) || "",
+              toStr(r.codigo) || '',
               toStr(r.detalle),
               toNum(r.cantidad) || 1,
               toNum(r.pCompra),
               toNum(r.total)
             );
-            incOk("det_compra");
-          } catch (e) { incErr("det_compra", e.message); }
+            incOk('det_compra');
+          } catch (e) {
+            incErr('det_compra', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -987,9 +1048,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- MOV_CAJA ----
     movCaja() {
-      initStats("mov_caja");
-      log("Migrando: MovCaja...");
-      const rows = getTable("MovCaja");
+      initStats('mov_caja');
+      log('Migrando: MovCaja...');
+      const rows = getTable('MovCaja');
       const insert = sqlite.prepare(`
         INSERT INTO mov_caja (referencia, fecha, cedula, concepto, natural, valor, val_ingre, val_egre)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -1000,16 +1061,18 @@ function migracionFactory(accdb, sqlite, stats) {
             const natural = toStr(r.Natural);
             insert.run(
               toStr(r.Referencia),
-              toDate(r.Fecha) || new Date().toISOString().split("T")[0],
+              toDate(r.Fecha) || new Date().toISOString().split('T')[0],
               toStr(r.Cedula),
               toStr(r.Concepto),
-              (natural === "E") ? "E" : "I",
+              natural === 'E' ? 'E' : 'I',
               toNum(r.Valor),
               toNum(r.Valingre),
               toNum(r.Valegre)
             );
-            incOk("mov_caja");
-          } catch (e) { incErr("mov_caja", e.message); }
+            incOk('mov_caja');
+          } catch (e) {
+            incErr('mov_caja', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1017,24 +1080,24 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- CTAS_POR_COBRAR ----
     ctasPorCobrar() {
-      initStats("ctas_por_cobrar");
-      log("Migrando: CtasPorCobrar...");
-      const rows = getTable("CtasPorCobrar");
+      initStats('ctas_por_cobrar');
+      log('Migrando: CtasPorCobrar...');
+      const rows = getTable('CtasPorCobrar');
       const insert = sqlite.prepare(`
         INSERT INTO ctas_por_cobrar (num_mov, id_cliente, num_docu, id_tipomo, fecha_doc, fecha_ven, concemo, importe, pago_clien, diferencia, saldo_clien, separado)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      const validTipos = new Set(["IN", "AB", "NC", "ND", "FA", "AN"]);
+      const validTipos = new Set(['IN', 'AB', 'NC', 'ND', 'FA', 'AN']);
       const insertMany = sqlite.transaction((data) => {
         for (const r of data) {
           try {
-            const tipo = toStr(r.Idtipomo) || "AB";
+            const tipo = toStr(r.Idtipomo) || 'AB';
             insert.run(
               toInt(r.NumMov),
-              toStr(r.IdCliente) || "",
+              toStr(r.IdCliente) || '',
               toStr(r.Numdocu),
-              validTipos.has(tipo) ? tipo : "AB",
-              toDate(r.Fechadoc) || new Date().toISOString().split("T")[0],
+              validTipos.has(tipo) ? tipo : 'AB',
+              toDate(r.Fechadoc) || new Date().toISOString().split('T')[0],
               toDate(r.Fechaven),
               toStr(r.Concemo),
               toNum(r.Importe),
@@ -1043,8 +1106,10 @@ function migracionFactory(accdb, sqlite, stats) {
               toNum(r.Saldoclien),
               toInt(r.Separado)
             );
-            incOk("ctas_por_cobrar");
-          } catch (e) { incErr("ctas_por_cobrar", e.message); }
+            incOk('ctas_por_cobrar');
+          } catch (e) {
+            incErr('ctas_por_cobrar', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1052,9 +1117,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- CTAS_POR_PAGAR ----
     ctasPorPagar() {
-      initStats("ctas_por_pagar");
-      log("Migrando: CtasPorPagar...");
-      const rows = getTable("CtasPorPagar");
+      initStats('ctas_por_pagar');
+      log('Migrando: CtasPorPagar...');
+      const rows = getTable('CtasPorPagar');
       const insert = sqlite.prepare(`
         INSERT INTO ctas_por_pagar (fecha_doc, fecha_ven, importe, pagado, saldo, estado)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -1064,15 +1129,17 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             const saldo = toNum(r.valor) - toNum(r.abono);
             insert.run(
-              new Date().toISOString().split("T")[0],
+              new Date().toISOString().split('T')[0],
               toDate(r.fechaVenc),
               toNum(r.valor),
               toNum(r.abono),
               saldo,
-              saldo <= 0 ? "C" : "P"
+              saldo <= 0 ? 'C' : 'P'
             );
-            incOk("ctas_por_pagar");
-          } catch (e) { incErr("ctas_por_pagar", e.message); }
+            incOk('ctas_por_pagar');
+          } catch (e) {
+            incErr('ctas_por_pagar', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1080,9 +1147,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- CUOTAS_CLI ----
     cuotasCli() {
-      initStats("cuotas_cli");
-      log("Migrando: CuotasCli...");
-      const rows = getTable("CuotasCli");
+      initStats('cuotas_cli');
+      log('Migrando: CuotasCli...');
+      const rows = getTable('CuotasCli');
       const insert = sqlite.prepare(`
         INSERT INTO cuotas_cli (id_cliente, num_doc, nro_cuota, id_tipomo, vencim, importe_total, tmp_importe, pagado, tmp_pagado, marca, estado)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1092,22 +1159,24 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             const pagado = toNum(r.Pagado);
             const total = toNum(r.ImporteTotal);
-            const estado = pagado >= total && total > 0 ? "C" : "P";
+            const estado = pagado >= total && total > 0 ? 'C' : 'P';
             insert.run(
-              toStr(r.IdCliente) || "",
+              toStr(r.IdCliente) || '',
               toStr(r.NumDoc),
               toInt(r.NroCuota),
-              toStr(r.Idtipomo) || "FA",
+              toStr(r.Idtipomo) || 'FA',
               toDate(r.Vencim),
               total,
               toNum(r.Tmp_Importe),
               pagado,
               toNum(r.Tmp_Pagado),
-              toStr(r.Marca) || " ",
+              toStr(r.Marca) || ' ',
               estado
             );
-            incOk("cuotas_cli");
-          } catch (e) { incErr("cuotas_cli", e.message); }
+            incOk('cuotas_cli');
+          } catch (e) {
+            incErr('cuotas_cli', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1115,9 +1184,9 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- ABONO_CUOTA ----
     abonoCuota() {
-      initStats("abono_cuota");
-      log("Migrando: AbonoCuota...");
-      const rows = getTable("AbonoCuota");
+      initStats('abono_cuota');
+      log('Migrando: AbonoCuota...');
+      const rows = getTable('AbonoCuota');
       const insert = sqlite.prepare(`
         INSERT INTO abono_cuota (num_docu, fecha, valor, concepto)
         VALUES (?, ?, ?, ?)
@@ -1127,12 +1196,14 @@ function migracionFactory(accdb, sqlite, stats) {
           try {
             insert.run(
               toStr(r.Numdocu),
-              new Date().toISOString().split("T")[0],
+              new Date().toISOString().split('T')[0],
               toNum(r.Importe),
-              `Abono cuota ${r.NroCuota || ""}`
+              `Abono cuota ${r.NroCuota || ''}`
             );
-            incOk("abono_cuota");
-          } catch (e) { incErr("abono_cuota", e.message); }
+            incOk('abono_cuota');
+          } catch (e) {
+            incErr('abono_cuota', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1140,13 +1211,13 @@ function migracionFactory(accdb, sqlite, stats) {
 
     // ---- PAGOS_INS ----
     pagosIns() {
-      initStats("pagos_ins");
-      log("Migrando: PagosIns...");
-      const rows = getTable("PagosIns");
+      initStats('pagos_ins');
+      log('Migrando: PagosIns...');
+      const rows = getTable('PagosIns');
       // Necesitamos mapear cedula del instructor a su id
       const instMap = {};
       try {
-        const instRows = sqlite.prepare("SELECT id, cedula FROM instructores").all();
+        const instRows = sqlite.prepare('SELECT id, cedula FROM instructores').all();
         for (const inst of instRows) instMap[inst.cedula] = inst.id;
       } catch {}
 
@@ -1158,16 +1229,18 @@ function migracionFactory(accdb, sqlite, stats) {
         for (const r of data) {
           try {
             const cedula = toStr(r.Cedula);
-            const idInstructor = cedula ? (instMap[cedula] || 1) : 1;
+            const idInstructor = cedula ? instMap[cedula] || 1 : 1;
             insert.run(
               idInstructor,
               r.Idespecialidad ? toInt(r.Idespecialidad) : null,
-              toDate(r.FechaPag) || new Date().toISOString().split("T")[0],
+              toDate(r.FechaPag) || new Date().toISOString().split('T')[0],
               toNum(r.ValorTot),
               toStr(r.Observaciones)
             );
-            incOk("pagos_ins");
-          } catch (e) { incErr("pagos_ins", e.message); }
+            incOk('pagos_ins');
+          } catch (e) {
+            incErr('pagos_ins', e.message);
+          }
         }
       });
       insertMany(rows);
@@ -1179,7 +1252,7 @@ function migracionFactory(accdb, sqlite, stats) {
 // EJECUTAR
 // =============================================
 main().catch((err) => {
-  console.error("\n[FATAL]", err.message);
+  console.error('\n[FATAL]', err.message);
   console.error(err.stack);
   process.exit(1);
 });

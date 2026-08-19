@@ -22,20 +22,20 @@ export const PAGE_SIZE = {
  */
 export const DATE_FORMAT = {
   /** Formato corto: 15/08/2026 */
-  SHORT: "dd/MM/yyyy",
+  SHORT: 'dd/MM/yyyy',
   /** Formato largo: 15 de agosto de 2026 */
   LONG: "d 'de' MMMM 'de' yyyy",
   /** Formato ISO: 2026-08-15 */
-  ISO: "yyyy-MM-dd",
+  ISO: 'yyyy-MM-dd',
 } as const;
 
 /**
  * Estados comunes en la aplicación.
  */
 export const ESTADO = {
-  ACTIVO: "A",
-  INACTIVO: "I",
-  PENDIENTE: "P",
-  CANCELADO: "C",
-  ANULADO: "AN",
+  ACTIVO: 'A',
+  INACTIVO: 'I',
+  PENDIENTE: 'P',
+  CANCELADO: 'C',
+  ANULADO: 'AN',
 } as const;

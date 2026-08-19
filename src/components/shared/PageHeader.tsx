@@ -2,9 +2,9 @@
  * PageHeader — encabezado consistente para todos los módulos.
  */
 
-import { type ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import { type LucideIcon } from "lucide-react";
+import { type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+import { type LucideIcon } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
@@ -14,9 +14,15 @@ interface PageHeaderProps {
   className?: string;
 }
 
-export function PageHeader({ title, description, icon: Icon, actions, className }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  icon: Icon,
+  actions,
+  className,
+}: PageHeaderProps) {
   return (
-    <div className={cn("flex flex-col gap-2 pb-6 border-b border-slate-200 mb-6", className)}>
+    <div className={cn('flex flex-col gap-2 pb-6 border-b border-slate-200 mb-6', className)}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {Icon && (
@@ -29,9 +35,7 @@ export function PageHeader({ title, description, icon: Icon, actions, className 
         {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
       </div>
       {description && (
-        <p className={cn("text-slate-500 text-sm", Icon ? "ml-[52px]" : "")}>
-          {description}
-        </p>
+        <p className={cn('text-slate-500 text-sm', Icon ? 'ml-[52px]' : '')}>{description}</p>
       )}
     </div>
   );

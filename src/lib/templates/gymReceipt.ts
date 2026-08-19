@@ -1,5 +1,5 @@
-import { formatDate, formatCurrency } from "@/lib/utils";
-import { numeroALetras } from "@/lib/numLetras";
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { numeroALetras } from '@/lib/numLetras';
 
 interface ReceiptItem {
   detalle: string;
@@ -27,9 +27,13 @@ interface PosReceiptGymProps {
 }
 
 export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
-  const timeStr = p.hora ? new Date(p.hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : "";
+  const timeStr = p.hora
+    ? new Date(p.hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+    : '';
 
-  const itemsHtml = p.items.map(item => `
+  const itemsHtml = p.items
+    .map(
+      (item) => `
     <tr>
       <td colspan="2" style="font-weight: bold; font-size: 11px;">${item.detalle}</td>
     </tr>
@@ -37,7 +41,9 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
       <td style="font-size: 10px;">${item.cantidad} x ${formatCurrency(item.punitario)}</td>
       <td style="text-align: right; font-size: 10px;">${formatCurrency(item.total)}</td>
     </tr>
-  `).join("");
+  `
+    )
+    .join('');
 
   return `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.4; letter-spacing: -0.2px;">
@@ -53,7 +59,7 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <div style="font-weight: 800; font-size: 13px; text-transform: uppercase;">RECIBO DE CAJA</div>
-        <div style="font-weight: 800; font-size: 14px; padding: 2px 6px; border: 1.5px solid #000; border-radius: 4px;"># ${String(p.nroDocu).padStart(6, "0")}</div>
+        <div style="font-weight: 800; font-size: 14px; padding: 2px 6px; border: 1.5px solid #000; border-radius: 4px;"># ${String(p.nroDocu).padStart(6, '0')}</div>
       </div>
       <div style="font-size: 10px; color: #444; margin-bottom: 8px;">${formatDate(p.fecha)} ${timeStr}</div>
       
@@ -72,7 +78,9 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
       
       <div style="font-weight: 800; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Detalle de la compra</div>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
-        ${p.items.map(item => `
+        ${p.items
+          .map(
+            (item) => `
           <tr>
             <td colspan="2" style="font-weight: 700; font-size: 11px; padding-bottom: 2px;">${item.detalle}</td>
           </tr>
@@ -80,7 +88,9 @@ export function generateHtmlGymReceipt(p: PosReceiptGymProps): string {
             <td style="font-size: 10px; color: #444; padding-bottom: 6px;">${item.cantidad} x ${formatCurrency(item.punitario)}</td>
             <td style="text-align: right; font-size: 11px; font-weight: 600; padding-bottom: 6px;">${formatCurrency(item.total)}</td>
           </tr>
-        `).join("")}
+        `
+          )
+          .join('')}
       </table>
 
       <div style="border-bottom: 1.5px dashed #000; margin: 10px 0;"></div>

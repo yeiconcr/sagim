@@ -1,7 +1,7 @@
 /**
  * Queries para el módulo de asistencias
  */
-import { getDb } from "../database";
+import { getDb } from '../database';
 
 export interface Asistencia {
   id: number;
@@ -35,26 +35,31 @@ export async function getAsistencias(params: GetAsistenciasParams = {}) {
   const db = await getDb();
   const { fechaDesde, fechaHasta, inscripcion, pageSize = 100, page = 1 } = params;
 
-  let where = "1=1";
+  let where = '1=1';
   const queryParams: (string | number)[] = [];
   let paramIndex = 1;
 
   if (fechaDesde) {
-    where += ` AND a.fecha >= $${paramIndex++}`;
+    where += ` AND a.fecha >= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaDesde);
   }
   if (fechaHasta) {
-    where += ` AND a.fecha <= $${paramIndex++}`;
+    where += ` AND a.fecha <= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaHasta);
   }
   if (inscripcion) {
-    where += ` AND a.inscripcion = $${paramIndex++}`;
+    where += ` AND a.inscripcion = $${paramIndex}`;
+    paramIndex++;
     queryParams.push(inscripcion);
   }
+  void paramIndex; // Usado dinámicamente
 
   const offset = (page - 1) * pageSize;
 
-  const data = await db.select<Asistencia[]>(`
+  const data = await db.select<Asistencia[]>(
+    `
     SELECT a.id, a.inscripcion, a.fecha, a.hora, a.tipo,
            c.cedula, (c.nombres || ' ' || c.apellidos) as nombre_completo
     FROM asistencias a
@@ -62,11 +67,16 @@ export async function getAsistencias(params: GetAsistenciasParams = {}) {
     WHERE ${where}
     ORDER BY a.fecha DESC, a.hora DESC
     LIMIT ${pageSize} OFFSET ${offset}
-  `, queryParams);
+  `,
+    queryParams
+  );
 
-  const countResult = await db.select<[{ total: number }]>(`
+  const countResult = await db.select<[{ total: number }]>(
+    `
     SELECT COUNT(*) as total FROM asistencias a WHERE ${where}
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   return {
     data,
@@ -79,24 +89,30 @@ export async function getAsistencias(params: GetAsistenciasParams = {}) {
 /**
  * Obtener resumen de asistencias por día
  */
-export async function getAsistenciasResumen(params: { fechaDesde?: string; fechaHasta?: string } = {}) {
+export async function getAsistenciasResumen(
+  params: { fechaDesde?: string; fechaHasta?: string } = {}
+) {
   const db = await getDb();
   const { fechaDesde, fechaHasta } = params;
 
-  let where = "1=1";
+  let where = '1=1';
   const queryParams: string[] = [];
   let paramIndex = 1;
 
   if (fechaDesde) {
-    where += ` AND fecha >= $${paramIndex++}`;
+    where += ` AND fecha >= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaDesde);
   }
   if (fechaHasta) {
-    where += ` AND fecha <= $${paramIndex++}`;
+    where += ` AND fecha <= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaHasta);
   }
+  void paramIndex;
 
-  const data = await db.select<AsistenciaResumen[]>(`
+  const data = await db.select<AsistenciaResumen[]>(
+    `
     SELECT fecha, 
            COUNT(*) as total_entradas,
            COUNT(DISTINCT inscripcion) as clientes_unicos
@@ -104,7 +120,9 @@ export async function getAsistenciasResumen(params: { fechaDesde?: string; fecha
     WHERE ${where}
     GROUP BY fecha
     ORDER BY fecha DESC
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   return data;
 }
@@ -112,46 +130,63 @@ export async function getAsistenciasResumen(params: { fechaDesde?: string; fecha
 /**
  * Obtener estadísticas de asistencias
  */
-export async function getAsistenciasEstadisticas(params: { fechaDesde?: string; fechaHasta?: string } = {}) {
+export async function getAsistenciasEstadisticas(
+  params: { fechaDesde?: string; fechaHasta?: string } = {}
+) {
   const db = await getDb();
   const { fechaDesde, fechaHasta } = params;
 
-  let where = "1=1";
+  let where = '1=1';
   const queryParams: string[] = [];
   let paramIndex = 1;
 
   if (fechaDesde) {
-    where += ` AND fecha >= $${paramIndex++}`;
+    where += ` AND fecha >= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaDesde);
   }
   if (fechaHasta) {
-    where += ` AND fecha <= $${paramIndex++}`;
+    where += ` AND fecha <= $${paramIndex}`;
+    paramIndex++;
     queryParams.push(fechaHasta);
   }
+  void paramIndex;
 
   // Total de entradas
-  const totalResult = await db.select<[{ total: number }]>(`
+  const totalResult = await db.select<[{ total: number }]>(
+    `
     SELECT COUNT(*) as total FROM asistencias WHERE ${where}
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   // Clientes únicos
-  const unicosResult = await db.select<[{ total: number }]>(`
+  const unicosResult = await db.select<[{ total: number }]>(
+    `
     SELECT COUNT(DISTINCT inscripcion) as total FROM asistencias WHERE ${where}
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   // Hora pico (hora con más entradas)
-  const horaPicoResult = await db.select<[{ hora: string; total: number }]>(`
+  const horaPicoResult = await db.select<[{ hora: string; total: number }]>(
+    `
     SELECT substr(hora, 1, 2) as hora, COUNT(*) as total 
     FROM asistencias WHERE ${where}
     GROUP BY substr(hora, 1, 2)
     ORDER BY total DESC
     LIMIT 1
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   // Días con asistencia
-  const diasResult = await db.select<[{ total: number }]>(`
+  const diasResult = await db.select<[{ total: number }]>(
+    `
     SELECT COUNT(DISTINCT fecha) as total FROM asistencias WHERE ${where}
-  `, queryParams);
+  `,
+    queryParams
+  );
 
   const totalEntradas = totalResult[0]?.total || 0;
   const diasConAsistencia = diasResult[0]?.total || 1;
@@ -170,25 +205,34 @@ export async function getAsistenciasEstadisticas(params: { fechaDesde?: string; 
 export async function getAsistenciasCliente(inscripcion: number, limite: number = 20) {
   const db = await getDb();
 
-  const data = await db.select<Asistencia[]>(`
+  const data = await db.select<Asistencia[]>(
+    `
     SELECT id, inscripcion, fecha, hora, tipo
     FROM asistencias
     WHERE inscripcion = $1
     ORDER BY fecha DESC, hora DESC
     LIMIT $2
-  `, [inscripcion, limite]);
+  `,
+    [inscripcion, limite]
+  );
 
   // Estadísticas del cliente
   const hoyStr = new Date().toISOString().split('T')[0];
-  const inicioMes = hoyStr.substring(0, 7) + "-01";
-  
-  const estatsMes = await db.select<[{ total: number }]>(`
-    SELECT COUNT(*) as total FROM asistencias WHERE inscripcion = $1 AND fecha >= $2
-  `, [inscripcion, inicioMes]);
+  const inicioMes = hoyStr.substring(0, 7) + '-01';
 
-  const estatsTotal = await db.select<[{ total: number }]>(`
+  const estatsMes = await db.select<[{ total: number }]>(
+    `
+    SELECT COUNT(*) as total FROM asistencias WHERE inscripcion = $1 AND fecha >= $2
+  `,
+    [inscripcion, inicioMes]
+  );
+
+  const estatsTotal = await db.select<[{ total: number }]>(
+    `
     SELECT COUNT(*) as total FROM asistencias WHERE inscripcion = $1
-  `, [inscripcion]);
+  `,
+    [inscripcion]
+  );
 
   return {
     historial: data,

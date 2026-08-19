@@ -2,13 +2,13 @@
  * SelectorCliente — buscador de cliente reutilizable en formularios de venta.
  * Al encontrar el cliente muestra sus datos y permite confirmar la selección.
  */
-import { useState, useRef } from "react";
-import { Search, X, UserCheck, UserX } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { getDb } from "@/db/database";
-import { cn } from "@/lib/utils";
+import { useState, useRef } from 'react';
+import { Search, X, UserCheck, UserX } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { getDb } from '@/db/database';
+import { cn } from '@/lib/utils';
 
 export interface ClienteSeleccionado {
   cedula: string;
@@ -17,7 +17,7 @@ export interface ClienteSeleccionado {
   apellidos: string;
   ciudad: string | null;
   direccion: string | null;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
   nombre_completo: string;
 }
 
@@ -29,8 +29,14 @@ interface SelectorClienteProps {
   autoFocus?: boolean;
 }
 
-export function SelectorCliente({ value, onChange, disabled, required, autoFocus }: SelectorClienteProps) {
-  const [busqueda, setBusqueda] = useState("");
+export function SelectorCliente({
+  value,
+  onChange,
+  disabled,
+  required,
+  autoFocus,
+}: SelectorClienteProps) {
+  const [busqueda, setBusqueda] = useState('');
   const [buscando, setBuscando] = useState(false);
   const [noEncontrado, setNoEncontrado] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +60,7 @@ export function SelectorCliente({ value, onChange, disabled, required, autoFocus
       );
       if (rows.length > 0) {
         onChange(rows[0]);
-        setBusqueda("");
+        setBusqueda('');
       } else {
         setNoEncontrado(true);
       }
@@ -67,30 +73,36 @@ export function SelectorCliente({ value, onChange, disabled, required, autoFocus
 
   if (value) {
     return (
-      <div className={cn(
-        "flex items-center justify-between gap-3 px-3 py-2 rounded-md border",
-        value.estado === "I" ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-      )}>
+      <div
+        className={cn(
+          'flex items-center justify-between gap-3 px-3 py-2 rounded-md border',
+          value.estado === 'I' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+        )}
+      >
         <div className="flex items-center gap-2 min-w-0">
-          {value.estado === "A"
-            ? <UserCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
-            : <UserX className="w-4 h-4 text-red-500 flex-shrink-0" />
-          }
+          {value.estado === 'A' ? (
+            <UserCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+          ) : (
+            <UserX className="w-4 h-4 text-red-500 flex-shrink-0" />
+          )}
           <div className="min-w-0">
             <p className="font-semibold text-sm leading-tight truncate">{value.nombre_completo}</p>
             <p className="text-xs text-slate-500 leading-tight">
               {value.cedula} · Insc. #{value.inscripcion}
-              {value.ciudad ? ` · ${value.ciudad}` : ""}
+              {value.ciudad ? ` · ${value.ciudad}` : ''}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant={value.estado === "A" ? "success" : "destructive"} className="text-xs">
-            {value.estado === "A" ? "ACTIVO" : "INACTIVO"}
+          <Badge variant={value.estado === 'A' ? 'success' : 'destructive'} className="text-xs">
+            {value.estado === 'A' ? 'ACTIVO' : 'INACTIVO'}
           </Badge>
           {!disabled && (
             <Button
-              type="button" variant="ghost" size="icon" className="h-7 w-7"
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
               onClick={() => onChange(null)}
             >
               <X className="w-3.5 h-3.5" />
@@ -109,30 +121,36 @@ export function SelectorCliente({ value, onChange, disabled, required, autoFocus
           <Input
             ref={inputRef}
             value={busqueda}
-            onChange={(e) => { setBusqueda(e.target.value); setNoEncontrado(false); }}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), buscar())}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              setNoEncontrado(false);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), buscar())}
             placeholder="Cédula, inscripción o nombre..."
-            className={cn("pl-8 h-9", noEncontrado && "border-red-300")}
+            className={cn('pl-8 h-9', noEncontrado && 'border-red-300')}
             disabled={disabled}
             autoFocus={autoFocus}
           />
         </div>
         <Button
-          type="button" size="sm" className="h-9"
+          type="button"
+          size="sm"
+          className="h-9"
           onClick={buscar}
           disabled={buscando || !busqueda.trim() || disabled}
         >
-          {buscando
-            ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            : <Search className="w-3.5 h-3.5" />
-          }
+          {buscando ? (
+            <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Search className="w-3.5 h-3.5" />
+          )}
         </Button>
       </div>
-      {noEncontrado && (
-        <p className="text-xs text-red-500">Cliente no encontrado: {busqueda}</p>
-      )}
+      {noEncontrado && <p className="text-xs text-red-500">Cliente no encontrado: {busqueda}</p>}
       {required && !value && (
-        <p className="text-xs text-slate-400">Requerido — busque por cédula, inscripción o nombre</p>
+        <p className="text-xs text-slate-400">
+          Requerido — busque por cédula, inscripción o nombre
+        </p>
       )}
     </div>
   );

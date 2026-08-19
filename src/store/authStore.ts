@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface Usuario {
   id: number;
@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ usuario: null, isAuthenticated: false }),
     }),
     {
-      name: "sagim-auth",
+      name: 'sagim-auth',
     }
   )
 );

@@ -1,19 +1,19 @@
-import { formatDate, formatCurrency } from "@/lib/utils";
-import { numeroALetras } from "@/lib/numLetras";
+import { formatDate, formatCurrency } from '@/lib/utils';
+import { numeroALetras } from '@/lib/numLetras';
 
 interface PosReceiptCajaProps {
   gimnasio: string;
   nit?: string | null;
   direccion?: string | null;
   telefono?: string | null;
-  
+
   fecha: string;
   referencia: string;
   cedula: string;
   concepto: string;
   natural: string;
   valor: number;
-  
+
   generadoPor?: string;
   valorLetras?: string | null;
   anulado?: boolean;
@@ -23,7 +23,7 @@ interface PosReceiptCajaProps {
 }
 
 export function generateHtmlCajaReceipt(p: PosReceiptCajaProps): string {
-  const isIngreso = p.natural === "I";
+  const isIngreso = p.natural === 'I';
 
   return `
     <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.4; letter-spacing: -0.2px;">

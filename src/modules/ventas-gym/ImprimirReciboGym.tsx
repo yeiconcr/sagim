@@ -1,13 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Printer, X } from "lucide-react";
-import { getDetReciboPorNro } from "@/db/queries/ventas";
-import { getParametros } from "@/db/queries/configuracion";
-import { useAuthStore } from "@/store/authStore";
-import type { Recibo } from "@/db/types";
-import { generateHtmlGymReceipt } from "@/lib/templates/gymReceipt";
-import { printHtmlReceipt } from "@/lib/printer";
+import { useState, useEffect, useMemo } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Printer, X } from 'lucide-react';
+import { getDetReciboPorNro } from '@/db/queries/ventas';
+import { getParametros } from '@/db/queries/configuracion';
+import { useAuthStore } from '@/store/authStore';
+import type { Recibo } from '@/db/types';
+import { generateHtmlGymReceipt } from '@/lib/templates/gymReceipt';
+import { printHtmlReceipt } from '@/lib/printer';
 
 interface Props {
   recibo: Recibo | null;
@@ -23,10 +23,7 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
   useEffect(() => {
     if (!recibo) return;
     setLoading(true);
-    Promise.all([
-      getDetReciboPorNro(recibo.nro_docu),
-      getParametros()
-    ])
+    Promise.all([getDetReciboPorNro(recibo.nro_docu), getParametros()])
       .then(([detalles, conf]) => {
         setItems(detalles);
         setParams(conf);
@@ -36,9 +33,9 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
   }, [recibo]);
 
   const htmlContent = useMemo(() => {
-    if (!recibo || !params) return "";
+    if (!recibo || !params) return '';
     return generateHtmlGymReceipt({
-      gimnasio: params.nombre_gimnasio ?? "SAGIM",
+      gimnasio: params.nombre_gimnasio ?? 'SAGIM',
       nit: params.nit,
       direccion: params.direccion,
       telefono: params.telefono,
@@ -47,17 +44,17 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
       nroDocu: recibo.nro_docu,
       fecha: recibo.fecha,
       hora: recibo.hora,
-      cliente: recibo.nombre_cliente ?? "",
-      cedula: recibo.cedula ?? "",
-      items: items.map(i => ({
+      cliente: recibo.nombre_cliente ?? '',
+      cedula: recibo.cedula ?? '',
+      items: items.map((i) => ({
         detalle: i.detalle,
         cantidad: i.cantidad,
         punitario: i.punitario,
-        total: i.total
+        total: i.total,
       })),
       total: recibo.total ?? 0,
       generadoPor: usuario?.nombre,
-      anulado: recibo.estado === "X"
+      anulado: recibo.estado === 'X',
     });
   }, [recibo, params, items, usuario]);
 
@@ -71,23 +68,30 @@ export function ImprimirReciboGym({ recibo, onClose }: Props) {
     <Dialog open={!!recibo} onOpenChange={(o) => !o && onClose()}>
       <DialogContent hideClose className="max-w-md max-h-[90vh] flex flex-col p-4">
         <DialogHeader className="flex flex-row justify-between items-center pb-2">
-          <DialogTitle>Recibo N° {String(recibo?.nro_docu).padStart(6, "0")}</DialogTitle>
+          <DialogTitle>Recibo N° {String(recibo?.nro_docu).padStart(6, '0')}</DialogTitle>
           <div className="flex items-center gap-2">
             <Button onClick={handlePrint} disabled={!htmlContent} variant="default" size="sm">
               <Printer className="w-4 h-4 mr-2" />
               Imprimir
             </Button>
-            <Button onClick={onClose} variant="outline" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-800 shrink-0">
+            <Button
+              onClick={onClose}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 text-slate-500 hover:text-slate-800 shrink-0"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
-        
+
         {loading || !htmlContent ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-slate-500">Generando tirilla...</div>
+          <div className="flex-1 flex items-center justify-center text-sm text-slate-500">
+            Generando tirilla...
+          </div>
         ) : (
           <div className="flex-1 bg-slate-100 rounded-md overflow-y-auto mt-2 p-4 flex justify-center items-start">
-            <div 
+            <div
               className="bg-white shadow-sm p-4 w-[80mm] text-black font-mono text-xs overflow-hidden relative border border-slate-200"
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />

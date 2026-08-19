@@ -12,7 +12,7 @@ export interface Usuario {
   password_hash: string;
   cargo: string | null;
   nivel: 1 | 2; // 1=Admin, 2=Operador
-  estado: "A" | "I";
+  estado: 'A' | 'I';
   fecha_creacion: string;
   creado_por: string | null;
 }
@@ -53,11 +53,11 @@ export interface Parametros {
 export interface Especialidad {
   id: number;
   nombre: string;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
 }
 
 // =============================================
-// ACTIVIDADES
+// ACTIVIDADES (Planes/Membresías)
 // =============================================
 export interface Actividad {
   id: number;
@@ -65,9 +65,9 @@ export interface Actividad {
   nombre: string;
   tarifa: number;
   factor: number; // días de duración de membresía
-  periodicidad: "M" | "U"; // M=mensual, U=única vez
+  periodicidad: 'M' | 'U'; // M=mensual/recurrente, U=única vez
   impuesto: number;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
 }
 
 // =============================================
@@ -77,7 +77,7 @@ export interface FormaPago {
   id: number;
   detalle: string;
   plazo_dias: number;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
 }
 
 // =============================================
@@ -92,7 +92,7 @@ export interface Proveedor {
   ciudad: string | null;
   contacto: string | null;
   email: string | null;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
 }
 
 // =============================================
@@ -107,11 +107,24 @@ export interface Instructor {
   telefono: string | null;
   celular: string | null;
   email: string | null;
-  id_especialidad: number | null;
+  fecha_nacimiento: string | null;
+  id_especialidad: number | null; // Legacy: campo único (deprecado)
   tarifa: number;
-  estado: "A" | "I";
-  // join
-  nombre_especialidad?: string;
+  estado: 'A' | 'I';
+  // joins
+  nombre_especialidad?: string; // Legacy
+  especialidades?: EspecialidadInstructor[]; // Nuevo: múltiples especialidades
+}
+
+export interface EspecialidadInstructor {
+  id: number;
+  nombre: string;
+}
+
+export interface InstructorEspecialidad {
+  id: number;
+  id_instructor: number;
+  id_especialidad: number;
 }
 
 // =============================================
@@ -128,10 +141,10 @@ export interface Cliente {
   celular: string | null;
   email: string | null;
   ciudad: string | null;
-  sexo: "1" | "2" | null; // 1=Masculino, 2=Femenino
+  sexo: '1' | '2' | null; // 1=Masculino, 2=Femenino
   fecha_inscripcion: string | null;
   fecha_nacimiento: string | null;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
   foto_path: string | null;
   fecha_creacion: string;
   // campos calculados (joins / lógica de negocio)
@@ -174,7 +187,7 @@ export interface Inventario {
   impuesto: number;
   ubicacion: string | null;
   id_proveedor: number | null;
-  estado: "A" | "I";
+  estado: 'A' | 'I';
   // calculado
   precio_venta?: number;
   nombre_proveedor?: string;
@@ -208,14 +221,16 @@ export interface Recibo {
   hora: string | null;
   cedula: string | null;
   inscripcion: number | null;
+  id_forma_pago: number | null;
   observaciones: string | null;
   valor_letras: string | null;
-  estado: "A" | "X"; // A=activo, X=anulado
+  estado: 'A' | 'X'; // A=activo, X=anulado
   fecha_anulacion: string | null;
   hora_anulacion: string | null;
   usuario_anulacion: string | null;
   // joins
   nombre_cliente?: string;
+  nombre_forma_pago?: string;
   total?: number;
 }
 
@@ -244,9 +259,9 @@ export interface PagoCli {
   fecha_pag: string;
   id_actividad: string | null;
   valor: number;
-  periodicidad: "M" | "U";
+  periodicidad: 'M' | 'U';
   observaciones: string | null;
-  estado: "A" | "X";
+  estado: 'A' | 'X';
   nro_recibo: number | null;
   // joins
   nombre_actividad?: string;
@@ -268,7 +283,7 @@ export interface FactuTienda {
   iva: number;
   total: number;
   valor_letras: string | null;
-  estado: "A" | "X";
+  estado: 'A' | 'X';
   fecha_anulacion: string | null;
   hora_anulacion: string | null;
   usuario_anulacion: string | null;
@@ -306,7 +321,7 @@ export interface Compra {
   id_forma_pago: number | null;
   plazo: number;
   observaciones: string | null;
-  estado: "A" | "X";
+  estado: 'A' | 'X';
   // joins
   nombre_proveedor?: string;
   nombre_forma_pago?: string;
@@ -334,7 +349,7 @@ export interface MovCaja {
   fecha: string;
   cedula: string | null;
   concepto: string | null;
-  natural: "I" | "E"; // I=ingreso, E=egreso
+  natural: 'I' | 'E'; // I=ingreso, E=egreso
   valor: number;
   val_ingre: number;
   val_egre: number;
@@ -345,7 +360,7 @@ export interface MovCaja {
 // =============================================
 // CTAS_POR_COBRAR
 // =============================================
-export type TipoMovCxC = "IN" | "AB" | "NC" | "ND" | "FA" | "AN";
+export type TipoMovCxC = 'IN' | 'AB' | 'NC' | 'ND' | 'FA' | 'AN';
 
 export interface CtaPorCobrar {
   id: number;
@@ -377,7 +392,7 @@ export interface CtaPorPagar {
   importe: number;
   pagado: number;
   saldo: number;
-  estado: "P" | "C"; // P=pendiente, C=cancelada
+  estado: 'P' | 'C'; // P=pendiente, C=cancelada
   // joins
   nombre_proveedor?: string;
 }
@@ -398,7 +413,7 @@ export interface CuotaCli {
   tmp_pagado: number;
   marca: string;
   separado: number;
-  estado: "P" | "C" | "V"; // P=pendiente, C=cancelada, V=vencida
+  estado: 'P' | 'C' | 'V'; // P=pendiente, C=cancelada, V=vencida
 }
 
 // =============================================
@@ -411,6 +426,18 @@ export interface AbonoCuota {
   fecha: string;
   valor: number;
   concepto: string | null;
+}
+
+// =============================================
+// NOTAS_CLIENTE
+// =============================================
+export interface NotaCliente {
+  id: number;
+  inscripcion: number;
+  nota: string;
+  tipo: 'info' | 'warning' | 'danger';
+  activa: number; // 0 o 1 (SQLite no tiene BOOLEAN nativo)
+  fecha_creacion: string;
 }
 
 // =============================================
@@ -485,9 +512,9 @@ export interface QueryParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  estado?: "A" | "I" | "X" | "todos";
+  estado?: 'A' | 'I' | 'X' | 'todos';
   fechaDesde?: string;
   fechaHasta?: string;
   orderBy?: string;
-  orderDir?: "ASC" | "DESC";
+  orderDir?: 'ASC' | 'DESC';
 }

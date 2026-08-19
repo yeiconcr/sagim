@@ -7,7 +7,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -16,7 +16,7 @@ interface ConfirmDialogProps {
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "default" | "destructive";
+  variant?: 'default' | 'destructive';
   onConfirm: () => void;
 }
 
@@ -25,9 +25,9 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
-  variant = "default",
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
+  variant = 'default',
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -42,8 +42,8 @@ export function ConfirmDialog({
           <AlertDialogAction
             onClick={onConfirm}
             className={
-              variant === "destructive"
-                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant === 'destructive'
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                 : undefined
             }
           >

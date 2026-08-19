@@ -2,13 +2,13 @@
  * useAsyncEffect — Hook para manejar efectos asíncronos con cleanup automático.
  * Previene actualizaciones de estado en componentes desmontados.
  */
-import { useEffect, useRef, useCallback, DependencyList } from "react";
+import { useEffect, useRef, useCallback, DependencyList } from 'react';
 
 /**
  * Hook que ejecuta una función async con cleanup automático.
  * El callback recibe una función `isMounted` que retorna false si el componente
  * se desmontó, permitiendo cancelar actualizaciones de estado.
- * 
+ *
  * @example
  * useAsyncEffect(async (isMounted) => {
  *   const data = await fetchData();
@@ -25,9 +25,9 @@ export function useAsyncEffect(
 
   useEffect(() => {
     mountedRef.current = true;
-    
+
     effect(() => mountedRef.current);
-    
+
     return () => {
       mountedRef.current = false;
     };
@@ -38,10 +38,10 @@ export function useAsyncEffect(
 /**
  * Hook que retorna una función para verificar si el componente está montado.
  * Útil para callbacks async que no están en useEffect.
- * 
+ *
  * @example
  * const isMounted = useIsMounted();
- * 
+ *
  * const handleClick = async () => {
  *   const data = await fetchData();
  *   if (isMounted()) {
