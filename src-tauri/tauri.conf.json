@@ -1,6 +1,6 @@
 {
   "productName": "SAGIM",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "identifier": "com.sagim.gimnasio",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -44,6 +44,14 @@
     "category": "Business",
     "shortDescription": "Sistema Administrativo de Gimnasios",
     "longDescription": "Sistema completo de administracion para gimnasios.",
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "certificateThumbprint": null,
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      }
+    },
     "macOS": {
       "entitlements": null,
       "exceptionDomain": null,
