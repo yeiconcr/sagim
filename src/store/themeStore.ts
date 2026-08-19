@@ -44,21 +44,13 @@ function applyDark(val: boolean) {
 }
 
 function applyZoom(val: number) {
-  const root = document.getElementById('root');
-  if (!root) return;
-  if (val === 1) {
-    root.style.transform = '';
-    root.style.width = '';
-    root.style.height = '';
-    root.style.transformOrigin = '';
-  } else {
-    // Escalar el contenido y compensar el espacio sobrante
-    // para que llene exactamente el viewport sin dejar áreas vacías
-    root.style.transformOrigin = 'top left';
-    root.style.transform = `scale(${val})`;
-    root.style.width = `${(1 / val) * 100}%`;
-    root.style.height = `${(1 / val) * 100}vh`;
-  }
+  // Cambiar el font-size base del documento.
+  // Tailwind usa rem — al cambiar el font-size del html, TODOS los elementos
+  // se escalan proporcionalmente y el layout se recalcula dentro del viewport.
+  // 1rem = 16px por defecto → al 80% = 12.8px, al 120% = 19.2px
+  // El body sigue siendo 100vw x 100vh, nunca se desborda.
+  const basePx = 16 * val;
+  document.documentElement.style.fontSize = `${basePx}px`;
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
