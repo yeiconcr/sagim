@@ -94,8 +94,21 @@ export async function dbExecute(
  * Ejecuta múltiples queries dentro de una transacción SQLite real.
  * Si cualquier operación falla, hace ROLLBACK completo garantizando
  * consistencia de datos (atomicidad).
+ *
+ * Serializa llamadas concurrentes con una cola para evitar que dos
+ * transacciones simultáneas generen "database is locked" (SQLITE_BUSY).
  */
+let _txQueue: Promise<void> = Promise.resolve();
+
 export async function dbTransaction(
+  operations: Array<{ sql: string; params?: unknown[] }>
+): Promise<void> {
+  // Encolar esta transacción detrás de la anterior para serializarlas.
+  _txQueue = _txQueue.then(() => _runTransaction(operations));
+  return _txQueue;
+}
+
+async function _runTransaction(
   operations: Array<{ sql: string; params?: unknown[] }>
 ): Promise<void> {
   const db = await getDb();
