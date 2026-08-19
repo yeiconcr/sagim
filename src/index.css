@@ -58,6 +58,7 @@
 }
 
 @layer base {
+  /* ── Variables de tema claro (defecto) ── */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -89,6 +90,10 @@
     --sidebar-ring: 221.2 83.2% 53.3%;
   }
 
+  /* ── Variables de tema oscuro ──
+     Al cambiar estas variables, TODOS los componentes que usan
+     bg-background, bg-card, text-foreground, etc. se actualizan
+     automáticamente porque usan hsl(var(--background)) internamente. */
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -126,9 +131,13 @@
   ::after {
     border-color: transparent;
   }
+
+  /* El fondo y color de texto base siguen las variables CSS custom
+     directamente — así responden al cambio de .dark sin intermediarios */
+  html,
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family:
       'Outfit',
       -apple-system,
@@ -137,6 +146,63 @@
       Roboto,
       sans-serif;
   }
+}
+
+/* ── Dark mode: remap global de colores hardcodeados ──
+   Los componentes usan bg-white, bg-slate-50, text-slate-* etc.
+   En vez de tocar cada componente, remapeamos globalmente
+   cuando .dark está en el html. */
+.dark .bg-white {
+  background-color: hsl(var(--card)) !important;
+}
+.dark .bg-slate-50 {
+  background-color: hsl(222.2 47.4% 10%) !important;
+}
+.dark .bg-slate-100 {
+  background-color: hsl(217.2 32.6% 14%) !important;
+}
+.dark .bg-slate-200 {
+  background-color: hsl(217.2 32.6% 18%) !important;
+}
+.dark .text-slate-900 {
+  color: hsl(210 40% 96%) !important;
+}
+.dark .text-slate-800 {
+  color: hsl(210 40% 92%) !important;
+}
+.dark .text-slate-700 {
+  color: hsl(215 20% 78%) !important;
+}
+.dark .text-slate-600 {
+  color: hsl(215 20% 70%) !important;
+}
+.dark .text-slate-500 {
+  color: hsl(215 20% 58%) !important;
+}
+.dark .text-slate-400 {
+  color: hsl(215 20% 50%) !important;
+}
+.dark .border-slate-200 {
+  border-color: hsl(var(--border)) !important;
+}
+.dark .border-slate-100 {
+  border-color: hsl(var(--border)) !important;
+}
+.dark .hover\:bg-slate-100:hover {
+  background-color: hsl(217.2 32.6% 17.5%) !important;
+}
+.dark .hover\:bg-slate-50:hover {
+  background-color: hsl(217.2 32.6% 12%) !important;
+}
+.dark input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+  background-color: hsl(217.2 32.6% 14%) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.dark textarea {
+  background-color: hsl(217.2 32.6% 14%) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
 }
 
 /* Scrollbar styling */
@@ -157,7 +223,6 @@
 
 /* ── Estilos de impresión ── */
 @media print {
-  /* Cuando se activa impresión, ocultar TODO excepto el área del PDF */
   body.sagim-printing * {
     visibility: hidden !important;
   }
@@ -181,7 +246,6 @@
     display: none !important;
   }
 
-  /* Impresión Ticket POS Nativo */
   @page {
     margin: 0;
   }
