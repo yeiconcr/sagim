@@ -25,5 +25,6 @@
     "fs:scope-document-recursive",
     "fs:scope-download-recursive",
     "fs:scope-desktop-recursive"
-  ]
+  ],
+  "platforms": ["macOS", "windows", "linux"]
 }

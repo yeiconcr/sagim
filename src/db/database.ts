@@ -2,6 +2,13 @@
  * Módulo principal de base de datos SAGIM.
  * Usa @tauri-apps/plugin-sql con SQLite.
  * La BD se almacena en el directorio de datos de la app (gestionado por Tauri).
+ *
+ * SEGURIDAD DE DATOS:
+ * - CREATE TABLE usa IF NOT EXISTS — nunca destruye tablas existentes.
+ * - Las migraciones ALTER TABLE tienen try/catch — ignoran columnas ya existentes.
+ * - Los seeds usan la tabla db_seeds para registrar qué seeds ya corrieron.
+ *   Cada seed tiene un ID único y corre exactamente UNA VEZ en toda la vida de la BD,
+ *   sin importar cuántas veces se actualice o reinstale la aplicación.
  */
 
 import Database from '@tauri-apps/plugin-sql';
@@ -16,8 +23,6 @@ export async function getDb(): Promise<Database> {
 }
 
 export async function initDatabase(): Promise<void> {
-  console.log('[SAGIM] Conectando a base de datos SQLite...');
-
   db = await Database.load('sqlite:sagim.db');
 
   // Crear todas las tablas
@@ -25,8 +30,6 @@ export async function initDatabase(): Promise<void> {
 
   // Insertar datos semilla si es primera vez
   await seedInitialData(db);
-
-  console.log('[SAGIM] Base de datos inicializada correctamente — 24 tablas');
 }
 
 async function createTables(db: Database): Promise<void> {
@@ -607,6 +610,8 @@ async function seedInitialData(db: Database): Promise<void> {
       ]);
     }
   }
+
+  // Actividades: el gimnasio las ingresa manualmente según sus propios planes y precios.
 
   // Usuario admin por defecto
   const users = await db.select<[{ c: number }]>('SELECT COUNT(*) as c FROM usuarios');

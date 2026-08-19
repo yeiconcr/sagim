@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, X, Upload, User } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload, User, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +15,7 @@ import {
 import { FormField } from '@/components/shared/FormField';
 import { DatePicker } from '@/components/shared/DatePicker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WebcamCapture } from '@/components/shared/WebcamCapture';
 import { useToast } from '@/store/toastStore';
 import type { Cliente } from '@/db/types';
 import {
@@ -23,7 +24,7 @@ import {
   getNextInscripcion,
   clienteCedulaExiste,
 } from '@/db/queries/clientes';
-import { today, formatDate } from '@/lib/utils';
+import { today } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 // =============================================
@@ -62,15 +63,15 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
   const [inscripcionAuto, setInscripcionAuto] = useState<number | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [fotoPath, setFotoPath] = useState<string | null>(cliente?.foto_path ?? null);
+  const [mostrarWebcam, setMostrarWebcam] = useState(false);
   const { success, error } = useToast();
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isDirty },
-    reset,
     watch,
+    formState: { errors, isDirty },
     setError: setFormError,
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -185,7 +186,6 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
   };
 
   const handleSeleccionarFoto = async () => {
-    // En producción Tauri usa dialog.open — aquí usamos input type=file
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg,image/png,image/bmp';
@@ -195,11 +195,17 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
       const reader = new FileReader();
       reader.onload = (ev) => {
         setFotoPreview(ev.target?.result as string);
-        setFotoPath(file.name);
+        setFotoPath(ev.target?.result as string);
       };
       reader.readAsDataURL(file);
     };
     input.click();
+  };
+
+  const handleCapturarFoto = (imageData: string) => {
+    setFotoPreview(imageData);
+    setFotoPath(imageData);
+    setMostrarWebcam(false);
   };
 
   return (
@@ -247,12 +253,7 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
                     {fotoPreview ? (
                       <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : fotoPath ? (
-                      <div className="flex flex-col items-center gap-1 text-slate-400">
-                        <User className="w-12 h-12" />
-                        <span className="text-xs text-center px-2 truncate w-full text-center">
-                          {fotoPath}
-                        </span>
-                      </div>
+                      <img src={fotoPath} alt="Foto" className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-slate-300">
                         <User className="w-16 h-16" />
@@ -260,6 +261,16 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
                       </div>
                     )}
                   </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setMostrarWebcam(true)}
+                  >
+                    <Camera className="w-3.5 h-3.5 mr-1.5" />
+                    Tomar foto
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -512,6 +523,11 @@ export function ClienteFormulario({ modo, cliente, onGuardar, onCancelar }: Prop
           </div>
         </form>
       </div>
+
+      {/* Modal Webcam */}
+      {mostrarWebcam && (
+        <WebcamCapture onCapture={handleCapturarFoto} onClose={() => setMostrarWebcam(false)} />
+      )}
     </div>
   );
 }

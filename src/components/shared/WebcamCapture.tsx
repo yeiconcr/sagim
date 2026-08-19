@@ -23,25 +23,26 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
     let mounted = true;
 
     async function startCamera() {
-      // Verificar si el navegador soporta getUserMedia
-      if (!navigator.mediaDevices) {
-        if (mounted) {
-          setError(
-            'La cámara no está disponible en este sistema. Esto puede ocurrir en algunas versiones de Windows. Intente actualizar WebView2 o use la función de cargar imagen desde archivo.'
-          );
-          setCameraState('error');
-        }
-        return;
-      }
+      // En Tauri, navigator.mediaDevices puede no estar disponible directamente
+      // porque http://localhost no siempre es tratado como origen seguro por WebView2.
+      // Solución: usar window.__TAURI__ para detectar el entorno y forzar
+      // el acceso via el objeto correcto.
 
-      if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
-        if (mounted) {
-          setError(
-            'La cámara no está disponible. En Windows, asegúrese de tener WebView2 Runtime actualizado.'
-          );
-          setCameraState('error');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const nav = navigator as Navigator & {
+          getUserMedia?: typeof navigator.mediaDevices.getUserMedia;
+          webkitGetUserMedia?: typeof navigator.mediaDevices.getUserMedia;
+          mozGetUserMedia?: typeof navigator.mediaDevices.getUserMedia;
+        };
+        if (!nav.getUserMedia && !nav.webkitGetUserMedia && !nav.mozGetUserMedia) {
+          if (mounted) {
+            setError(
+              'La cámara no está disponible en este sistema. Use la opción de cargar imagen desde archivo.'
+            );
+            setCameraState('error');
+          }
+          return;
         }
-        return;
       }
 
       setCameraState('requesting');
@@ -57,14 +58,12 @@ export function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
           setStream(mediaStream);
           setCameraState('active');
         } else if (mediaStream) {
-          // Si el componente se desmontó, detener el stream
           mediaStream.getTracks().forEach((track) => track.stop());
         }
       } catch (err: unknown) {
         console.error('Error accediendo a la cámara:', err);
         if (mounted) {
           const error = err as Error & { name?: string };
-          // Mensajes específicos según el tipo de error
           if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             setError(
               'Permiso de cámara denegado. Por favor permita el acceso a la cámara cuando el sistema lo solicite.'
